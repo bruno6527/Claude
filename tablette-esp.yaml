@@ -1297,11 +1297,16 @@ lvgl:
       bg_color: 0x08142D
       bg_opa: 100%
       text_color: 0xF1F5F9
+      # Page fixe : empêche le décalage horizontal au démarrage
+      scrollable: false
       on_load:
+        - lambda: lv_obj_scroll_to(lv_scr_act(), 0, 0, LV_ANIM_OFF);
         - script.execute:
             id: set_nav
             idx: 0
             title: "Accueil"
+        - delay: 50ms
+        - lambda: lv_obj_scroll_to(lv_scr_act(), 0, 0, LV_ANIM_OFF);
       widgets:
         # Météo (cliquable : ouvre la page Météo)
         - obj:
