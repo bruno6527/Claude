@@ -1,0 +1,2071 @@
+substitutions:
+  name: tablette-esp
+  lamp_entity: light.tasmota
+  # PIR HC-SR501 : broche de sortie (à confirmer) et durée avant extinction de l'écran
+  pir_pin: GPIO6
+  screen_timeout: 5min
+  # Codes des icônes MDI
+  mdi_home: "\U000F02DC"
+  mdi_bulb: "\U000F0335"
+  mdi_therm: "\U000F050F"
+  mdi_shield: "\U000F068A"
+  mdi_paw: "\U000F03E9"
+  mdi_plug: "\U000F06A5"
+  mdi_drop: "\U000F058E"
+  mdi_gauge: "\U000F029A"
+  mdi_speaker: "\U000F04C3"
+  mdi_phone: "\U000F011C"
+  mdi_tablet: "\U000F04F7"
+  mdi_battery: "\U000F0079"
+  mdi_bed: "\U000F02E3"
+  mdi_ceiling: "\U000F0769"
+  mdi_cube: "\U000F01A7"
+  mdi_volume: "\U000F057E"
+  mdi_lock: "\U000F033E"
+  mdi_sofa: "\U000F04B9"
+  mdi_lamp: "\U000F06B5"
+  mdi_cat: "\U000F011B"
+  mdi_cctv: "\U000F07AE"
+  mdi_sun: "\U000F0599"
+  mdi_cloud: "\U000F0590"
+  mdi_pcloud: "\U000F0595"
+  mdi_rain: "\U000F0597"
+  mdi_pour: "\U000F0596"
+  mdi_snow: "\U000F0598"
+  mdi_fog: "\U000F0591"
+  mdi_night: "\U000F0594"
+  mdi_bolt: "\U000F0593"
+  mdi_wind: "\U000F059D"
+
+esphome:
+  name: ${name}
+  platformio_options:
+    board_build.flash_mode: dio
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: screen_wake
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 8MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${name} fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+# ---------- Heure (depuis Home Assistant) ----------
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time_sync:
+      - lvgl.label.update:
+          id: hdr_time
+          text:
+            format: "%s"
+            args: ['id(ha_time).now().strftime("%H:%M").c_str()']
+    on_time:
+      - seconds: 0
+        then:
+          - lvgl.label.update:
+              id: hdr_time
+              text:
+                format: "%s"
+                args: ['id(ha_time).now().strftime("%H:%M").c_str()']
+
+# ---------- Image de la caméra ----------
+http_request:
+  timeout: 8s
+
+online_image:
+  - id: camera_img
+    url: !secret camera_url
+    format: JPEG
+    type: RGB565
+    resize: 480x270
+    request_headers:
+      Authorization: !secret ha_bearer
+    update_interval: never
+    on_download_finished:
+      - lvgl.image.update:
+          id: img_cam
+          src: camera_img
+    on_error:
+      - logger.log: "Echec du telechargement de l'image camera"
+
+# ---------- Polices ----------
+font:
+  - file: "gfonts://Roboto"
+    id: r16
+    size: 16
+    glyphsets: [GF_Latin_Core]
+    glyphs: ["°"]
+  - file: "gfonts://Roboto"
+    id: r22
+    size: 22
+    glyphsets: [GF_Latin_Core]
+    glyphs: ["°"]
+  - file: "gfonts://Roboto"
+    id: r28
+    size: 28
+    glyphsets: [GF_Latin_Core]
+    glyphs: ["°"]
+  - file: "gfonts://Roboto"
+    id: r40
+    size: 40
+    glyphsets: [GF_Latin_Core]
+    glyphs: ["°"]
+  - file: "gfonts://Roboto"
+    id: r56
+    size: 56
+    glyphsets: [GF_Latin_Core]
+    glyphs: ["°"]
+  # Grands chiffres des températures (chiffres seulement, pour économiser la flash)
+  - file: "gfonts://Roboto"
+    id: r72
+    size: 72
+    glyphs: "0123456789.,-° "
+
+  - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/master/fonts/materialdesignicons-webfont.ttf"
+    id: mdi_28
+    size: 28
+    glyphs: &mdi_glyphs
+      - "${mdi_home}"
+      - "${mdi_bulb}"
+      - "${mdi_therm}"
+      - "${mdi_shield}"
+      - "${mdi_paw}"
+      - "${mdi_plug}"
+      - "${mdi_drop}"
+      - "${mdi_gauge}"
+      - "${mdi_speaker}"
+      - "${mdi_phone}"
+      - "${mdi_tablet}"
+      - "${mdi_battery}"
+      - "${mdi_bed}"
+      - "${mdi_ceiling}"
+      - "${mdi_cube}"
+      - "${mdi_volume}"
+      - "${mdi_lock}"
+      - "${mdi_sofa}"
+      - "${mdi_lamp}"
+      - "${mdi_cat}"
+      - "${mdi_cctv}"
+      - "${mdi_sun}"
+      - "${mdi_cloud}"
+      - "${mdi_pcloud}"
+      - "${mdi_rain}"
+      - "${mdi_pour}"
+      - "${mdi_snow}"
+      - "${mdi_fog}"
+      - "${mdi_night}"
+      - "${mdi_bolt}"
+      - "${mdi_wind}"
+  - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/master/fonts/materialdesignicons-webfont.ttf"
+    id: mdi_40
+    size: 40
+    glyphs: *mdi_glyphs
+  - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/master/fonts/materialdesignicons-webfont.ttf"
+    id: mdi_64
+    size: 64
+    glyphs: *mdi_glyphs
+
+# ---------- Matériel ----------
+i2c:
+  sda: GPIO8
+  scl: GPIO9
+  scan: true
+
+ch422g:
+  - id: ch422g_hub
+
+output:
+  - platform: gpio
+    id: backlight_out
+    pin:
+      ch422g: ch422g_hub
+      number: 2
+      mode:
+        output: true
+
+light:
+  - platform: binary
+    name: "Ecran retroeclairage"
+    id: backlight
+    output: backlight_out
+    restore_mode: ALWAYS_ON
+    on_turn_on:
+      - script.execute: screen_wake
+
+display:
+  - platform: rpi_dpi_rgb
+    id: main_display
+    auto_clear_enabled: false
+    update_interval: never
+    color_order: RGB
+    pclk_frequency: 16MHz
+    pclk_inverted: true
+    dimensions:
+      width: 800
+      height: 480
+    de_pin: GPIO5
+    hsync_pin: GPIO46
+    vsync_pin: GPIO3
+    pclk_pin: GPIO7
+    hsync_pulse_width: 4
+    hsync_back_porch: 8
+    hsync_front_porch: 8
+    vsync_pulse_width: 4
+    vsync_back_porch: 8
+    vsync_front_porch: 8
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 3
+      mode:
+        output: true
+    data_pins:
+      red: [GPIO1, GPIO2, GPIO42, GPIO41, GPIO40]
+      green: [GPIO39, GPIO0, GPIO45, GPIO48, GPIO47, GPIO21]
+      blue: [GPIO14, GPIO38, GPIO18, GPIO17, GPIO10]
+
+touchscreen:
+  - platform: gt911
+    id: touch
+    interrupt_pin: GPIO4
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 1
+      mode:
+        output: true
+    on_touch:
+      - script.execute: screen_wake
+
+# ---------- Animations (timer ~10 images/s) + maintien écran allumé si présence ----------
+interval:
+  - interval: 100ms
+    then:
+      - lambda: |-
+          static int k = 0;
+          k = (k + 1) % 40;
+          int tri = k < 20 ? k : 40 - k;
+          int k2 = (k * 2) % 40;
+          int tri2 = k2 < 20 ? k2 : 40 - k2;
+
+          struct G { lv_obj_t *card; lv_obj_t *sw; uint32_t col; bool fast; };
+          G gl[] = {
+            {id(card_lampe), id(sw_lampe), 0xF59E0B, false},
+            {id(card_chauffage), id(sw_chauffage), 0xF97316, false},
+            {id(card_sono_home), id(sw_sono_home), 0x8B5CF6, false},
+            {id(dm_cadre), id(sw_cadre), 0xF59E0B, false},
+            {id(dm_buffet), id(sw_buffet), 0xFBBF24, false},
+            {id(dm_plafond), id(sw_plafond), 0x3B82F6, false},
+            {id(dm_matrice), id(sw_matrice), 0x8B5CF6, false},
+            {id(dm_cube), id(sw_cube), 0x06B6D4, false},
+            {id(card_alarme_sec), id(sw_alarme_sec), 0xEF4444, true},
+            {id(card_alarme_auto), id(sw_alarme_auto), 0x8B5CF6, false},
+            {id(card_prise_sono), id(sw_prise_sono), 0x8B5CF6, false},
+            {id(card_relais_zw), id(sw_relais_zw), 0x10B981, false},
+          };
+          for (auto &g : gl) {
+            bool on = lv_obj_has_state(g.sw, LV_STATE_CHECKED);
+            lv_obj_set_style_shadow_color(g.card, lv_color_hex(g.col), 0);
+            lv_obj_set_style_shadow_opa(g.card, on ? LV_OPA_50 : LV_OPA_TRANSP, 0);
+            lv_obj_set_style_border_color(g.card, lv_color_hex(g.col), 0);
+            lv_obj_set_style_border_opa(g.card, on ? LV_OPA_80 : LV_OPA_30, 0);
+            if (on) lv_obj_set_style_shadow_width(g.card, 4 + (g.fast ? tri2 : tri), 0);
+          }
+
+          lv_obj_set_style_translate_y(id(lbl_meteo_icon), tri / 2 - 5, 0);
+          lv_obj_set_style_text_opa(id(splash_icon), 90 + tri * 8, 0);
+
+  # Tant que le PIR détecte une présence, on repousse l'extinction de l'écran
+  - interval: 10s
+    then:
+      - if:
+          condition:
+            binary_sensor.is_on: pir
+          then:
+            - script.execute: screen_wake
+
+# ---------- Scripts ----------
+script:
+  - id: set_nav
+    parameters:
+      idx: int
+      title: string
+    then:
+      - lvgl.label.update:
+          id: hdr_title
+          text: !lambda return title;
+      - text_sensor.template.publish:
+          id: ts_page
+          state: !lambda return title;
+      - lvgl.widget.update:
+          id: nav_0
+          state:
+            checked: !lambda return idx == 0;
+      - lvgl.widget.update:
+          id: nav_1
+          state:
+            checked: !lambda return idx == 1;
+      - lvgl.widget.update:
+          id: nav_2
+          state:
+            checked: !lambda return idx == 2;
+      - lvgl.widget.update:
+          id: nav_3
+          state:
+            checked: !lambda return idx == 3;
+      - lvgl.widget.update:
+          id: nav_5
+          state:
+            checked: !lambda return idx == 5;
+
+  # Allume l'écran, puis l'éteint après ${screen_timeout} sans mouvement ni toucher
+  - id: screen_wake
+    mode: restart
+    then:
+      - light.turn_on: backlight
+      - delay: ${screen_timeout}
+      - light.turn_off: backlight
+
+  # Rafraîchit l'image de la caméra tant que la page Caméra est affichée
+  - id: cam_loop
+    mode: restart
+    then:
+      - while:
+          condition:
+            lambda: 'return true;'
+          then:
+            - component.update: camera_img
+            - delay: 3s
+
+  # Envoie une couleur à la lumière choisie (color_target) puis ferme la palette
+  - id: set_color
+    parameters:
+      red: int
+      green: int
+      blue: int
+    then:
+      - homeassistant.action:
+          action: light.turn_on
+          data:
+            entity_id: !lambda 'return id(color_target);'
+          data_template:
+            rgb_color: "[{{ r }}, {{ g }}, {{ b }}]"
+          variables:
+            r: 'return to_string(red);'
+            g: 'return to_string(green);'
+            b: 'return to_string(blue);'
+      - lvgl.widget.hide: color_popup
+
+  # Colore la pastille d'une lumière à partir de l'attribut rgb_color reçu de HA
+  - id: paint_swatch
+    mode: queued
+    parameters:
+      idx: int
+      rgb: string
+    then:
+      - lambda: |-
+          lv_obj_t *sw[] = {id(col_cadre), id(col_buffet), id(col_plafond), id(col_matrice), id(col_cube)};
+          if (idx < 0 || idx > 4) return;
+          int v[3] = {0, 0, 0}, n = 0, cur = -1;
+          for (char c : rgb) {
+            if (c >= '0' && c <= '9') cur = (cur < 0 ? 0 : cur * 10) + (c - '0');
+            else if (cur >= 0) { if (n < 3) v[n++] = cur; cur = -1; }
+          }
+          if (cur >= 0 && n < 3) v[n++] = cur;
+          if (n == 3) lv_obj_set_style_bg_color(sw[idx], lv_color_make(v[0], v[1], v[2]), 0);
+
+  # Dessine les prévisions de la page Météo
+  - id: draw_forecast
+    mode: restart
+    then:
+      - lambda: |-
+          auto split = [](const std::string &s) {
+            std::vector<std::string> out;
+            size_t st = 0;
+            while (true) {
+              size_t p = s.find(',', st);
+              if (p == std::string::npos) { out.push_back(s.substr(st)); break; }
+              out.push_back(s.substr(st, p - st));
+              st = p + 1;
+            }
+            return out;
+          };
+          auto cond = split(id(ts_fc_cond).state);
+          auto smax = split(id(ts_fc_tmax).state);
+          auto smin = split(id(ts_fc_tmin).state);
+          auto srain = split(id(ts_fc_rain).state);
+          auto swsp = split(id(ts_fc_wspd).state);
+          auto swdir = split(id(ts_fc_wdir).state);
+          auto sdow = split(id(ts_fc_dow).state);
+          if (cond.size() < 6 || smax.size() < 6 || smin.size() < 6 || srain.size() < 6 ||
+              swsp.size() < 6 || swdir.size() < 6 || sdow.size() < 6) return;
+
+          lv_obj_t *day[] = {id(lbl_d0), id(lbl_d1), id(lbl_d2), id(lbl_d3), id(lbl_d4), id(lbl_d5)};
+          lv_obj_t *icn[] = {id(lbl_i0), id(lbl_i1), id(lbl_i2), id(lbl_i3), id(lbl_i4), id(lbl_i5)};
+          lv_obj_t *hi[] = {id(lbl_h0), id(lbl_h1), id(lbl_h2), id(lbl_h3), id(lbl_h4), id(lbl_h5)};
+          lv_obj_t *lo[] = {id(lbl_l0), id(lbl_l1), id(lbl_l2), id(lbl_l3), id(lbl_l4), id(lbl_l5)};
+          lv_obj_t *dh[] = {id(dot_h0), id(dot_h1), id(dot_h2), id(dot_h3), id(dot_h4), id(dot_h5)};
+          lv_obj_t *dl[] = {id(dot_l0), id(dot_l1), id(dot_l2), id(dot_l3), id(dot_l4), id(dot_l5)};
+          lv_obj_t *rn[] = {id(lbl_r0), id(lbl_r1), id(lbl_r2), id(lbl_r3), id(lbl_r4), id(lbl_r5)};
+          lv_obj_t *ring[] = {id(ring_0), id(ring_1), id(ring_2), id(ring_3), id(ring_4), id(ring_5)};
+          lv_obj_t *wsp[] = {id(lbl_w0), id(lbl_w1), id(lbl_w2), id(lbl_w3), id(lbl_w4), id(lbl_w5)};
+          lv_obj_t *wdr[] = {id(lbl_wd0), id(lbl_wd1), id(lbl_wd2), id(lbl_wd3), id(lbl_wd4), id(lbl_wd5)};
+
+          lv_obj_t *mh[5][5] = {
+            {id(mh_0_0), id(mh_0_1), id(mh_0_2), id(mh_0_3), id(mh_0_4)},
+            {id(mh_1_0), id(mh_1_1), id(mh_1_2), id(mh_1_3), id(mh_1_4)},
+            {id(mh_2_0), id(mh_2_1), id(mh_2_2), id(mh_2_3), id(mh_2_4)},
+            {id(mh_3_0), id(mh_3_1), id(mh_3_2), id(mh_3_3), id(mh_3_4)},
+            {id(mh_4_0), id(mh_4_1), id(mh_4_2), id(mh_4_3), id(mh_4_4)}};
+          lv_obj_t *ml[5][5] = {
+            {id(ml_0_0), id(ml_0_1), id(ml_0_2), id(ml_0_3), id(ml_0_4)},
+            {id(ml_1_0), id(ml_1_1), id(ml_1_2), id(ml_1_3), id(ml_1_4)},
+            {id(ml_2_0), id(ml_2_1), id(ml_2_2), id(ml_2_3), id(ml_2_4)},
+            {id(ml_3_0), id(ml_3_1), id(ml_3_2), id(ml_3_3), id(ml_3_4)},
+            {id(ml_4_0), id(ml_4_1), id(ml_4_2), id(ml_4_3), id(ml_4_4)}};
+
+          auto fmt = [](float v) {
+            char b[16];
+            snprintf(b, sizeof(b), "%.1f", v);
+            for (char *p = b; *p; ++p) if (*p == '.') *p = ',';
+            return std::string(b);
+          };
+
+          float th[6], tl[6];
+          for (int i = 0; i < 6; i++) { th[i] = atof(smax[i].c_str()); tl[i] = atof(smin[i].c_str()); }
+          float vmin = tl[0], vmax = th[0];
+          for (int i = 0; i < 6; i++) {
+            vmin = fminf(vmin, fminf(tl[i], th[i]));
+            vmax = fmaxf(vmax, fmaxf(tl[i], th[i]));
+          }
+          float span = vmax - vmin;
+          if (span < 1.0f) span = 1.0f;
+          const int top = 272, bot = 332;
+
+          const char *dn[] = {"lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."};
+          const char *dirs[] = {"N", "NE", "E", "SE", "S", "SO", "O", "NO"};
+
+          int yhs[6], yls[6];
+          for (int i = 0; i < 6; i++) {
+            int cx = 145 + 118 * i;
+            int yh = (int) (top + (vmax - th[i]) / span * (bot - top));
+            int yl = (int) (top + (vmax - tl[i]) / span * (bot - top));
+            yhs[i] = yh;
+            yls[i] = yl;
+            lv_obj_set_pos(dh[i], cx - 5, yh - 5);
+            lv_obj_set_pos(dl[i], cx - 5, yl - 5);
+            lv_label_set_text(hi[i], (fmt(th[i]) + "°").c_str());
+            lv_obj_set_y(hi[i], yh - 28);
+            lv_label_set_text(lo[i], (fmt(tl[i]) + "°").c_str());
+            lv_obj_set_y(lo[i], yl + 8);
+
+            lv_label_set_text(day[i], dn[atoi(sdow[i].c_str()) % 7]);
+
+            const std::string &c = cond[i];
+            const char *ic = "\U000F0590";
+            uint32_t col = 0xB0BEC5;
+            if (c == "sunny")              { ic = "\U000F0599"; col = 0xFBBF24; }
+            else if (c == "clear-night")   { ic = "\U000F0594"; col = 0xFDE68A; }
+            else if (c == "partlycloudy")  { ic = "\U000F0595"; col = 0xFDE68A; }
+            else if (c == "cloudy")        { ic = "\U000F0590"; col = 0xB0BEC5; }
+            else if (c == "rainy")         { ic = "\U000F0597"; col = 0x38BDF8; }
+            else if (c == "pouring")       { ic = "\U000F0596"; col = 0x3B82F6; }
+            else if (c == "snowy")         { ic = "\U000F0598"; col = 0xE0F2FE; }
+            else if (c == "fog")           { ic = "\U000F0591"; col = 0xCBD5E1; }
+            else if (c == "windy")         { ic = "\U000F059D"; col = 0x06B6D4; }
+            else if (c == "lightning" || c == "lightning-rainy") { ic = "\U000F0593"; col = 0xFACC15; }
+            lv_label_set_text(icn[i], ic);
+            lv_obj_set_style_text_color(icn[i], lv_color_hex(col), 0);
+
+            char b[20];
+            float r = atof(srain[i].c_str());
+            if (r > 0.05f) {
+              snprintf(b, sizeof(b), "%.1f mm", r);
+              for (char *p = b; *p; ++p) if (*p == '.') *p = ',';
+            } else {
+              b[0] = 0;
+            }
+            lv_label_set_text(rn[i], b);
+
+            int ws = atoi(swsp[i].c_str());
+            uint32_t rc = ws < 12 ? 0x10B981 : (ws < 30 ? 0xF59E0B : 0xEF4444);
+            lv_obj_set_style_border_color(ring[i], lv_color_hex(rc), 0);
+            snprintf(b, sizeof(b), "%d", ws);
+            lv_label_set_text(wsp[i], b);
+            float deg = atof(swdir[i].c_str());
+            int di = ((int) ((deg + 22.5f) / 45.0f)) % 8;
+            lv_label_set_text(wdr[i], deg > 0 ? dirs[di] : " ");
+          }
+
+          // Courbes : petits points interpolés (courbe adoucie) entre deux jours
+          for (int s = 0; s < 5; s++) {
+            int x0 = 145 + 118 * s;
+            for (int j = 0; j < 5; j++) {
+              float f = (j + 1) / 6.0f;
+              float g = (1.0f - cosf(f * 3.14159265f)) * 0.5f;
+              int x = x0 + (int) (118.0f * f);
+              int yh = yhs[s] + (int) ((yhs[s + 1] - yhs[s]) * g);
+              int yl = yls[s] + (int) ((yls[s + 1] - yls[s]) * g);
+              lv_obj_set_pos(mh[s][j], x - 2, yh - 2);
+              lv_obj_set_pos(ml[s][j], x - 2, yl - 2);
+            }
+          }
+
+          lv_label_set_text(id(lbl_wm_minmax), (fmt(th[0]) + "°C / " + fmt(tl[0]) + "°C").c_str());
+
+# ---------- Données Home Assistant : capteurs ----------
+sensor:
+  - platform: homeassistant
+    id: temp_chambre
+    entity_id: sensor.bedroom_sensor_chambre_air_temperature
+    on_value:
+      - lvgl.label.update:
+          id: lbl_chambre
+          text:
+            format: "%.1f"
+            args: ["x"]
+      - lvgl.label.update:
+          id: lbl_chambre_clim
+          text:
+            format: "%.1f"
+            args: ["x"]
+      - lambda: |-
+          uint32_t c = x < 17 ? 0x38BDF8 : (x < 23 ? 0x10B981 : 0xF97316);
+          lv_obj_set_style_text_color(id(ic_chambre), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(ln_chambre), lv_color_hex(c), 0);
+          lv_obj_set_style_text_color(id(ic_chambre_clim), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(ln_chambre_clim), lv_color_hex(c), 0);
+
+  - platform: homeassistant
+    id: temp_salon
+    entity_id: sensor.living_room_temperature_salon_air_temperature
+    on_value:
+      - lvgl.label.update:
+          id: lbl_salon_clim
+          text:
+            format: "%.1f"
+            args: ["x"]
+      - lvgl.label.update:
+          id: lbl_salon
+          text:
+            format: "%.1f"
+            args: ["x"]
+      - lambda: |-
+          uint32_t c = x < 17 ? 0x38BDF8 : (x < 23 ? 0x10B981 : 0xF97316);
+          lv_obj_set_style_text_color(id(ic_salon_clim), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(ln_salon_clim), lv_color_hex(c), 0);
+          lv_obj_set_style_text_color(id(ic_salon), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(ln_salon), lv_color_hex(c), 0);
+
+  - platform: homeassistant
+    id: temp_sdb
+    entity_id: sensor.temperature_sdb_corrigee
+    on_value:
+      - lvgl.label.update:
+          id: lbl_sdb_home
+          text:
+            format: "%.1f"
+            args: ["x"]
+      - lvgl.label.update:
+          id: lbl_sdb_clim
+          text:
+            format: "%.1f"
+            args: ["x"]
+      - lambda: |-
+          uint32_t c = x < 18 ? 0x38BDF8 : (x < 24 ? 0x10B981 : 0xF97316);
+          lv_obj_set_style_text_color(id(ic_sdb_home), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(ln_sdb_home), lv_color_hex(c), 0);
+          lv_obj_set_style_text_color(id(ic_sdb_clim), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(ln_sdb_clim), lv_color_hex(c), 0);
+
+  - platform: homeassistant
+    id: temp_ext
+    entity_id: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature
+    on_value:
+      - lvgl.label.update:
+          id: lbl_ext_home
+          text:
+            format: "%.1f"
+            args: ["x"]
+      - lvgl.label.update:
+          id: lbl_ext_clim
+          text:
+            format: "%.1f"
+            args: ["x"]
+      - lambda: |-
+          uint32_t c = x < 10 ? 0x38BDF8 : (x < 25 ? 0x10B981 : 0xF97316);
+          lv_obj_set_style_text_color(id(ic_ext_home), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(ln_ext_home), lv_color_hex(c), 0);
+          lv_obj_set_style_text_color(id(ic_ext_clim), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(ln_ext_clim), lv_color_hex(c), 0);
+
+  - platform: homeassistant
+    id: hum_sdb
+    entity_id: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_12_humidity
+    on_value:
+      - lvgl.label.update:
+          id: lbl_hum_sdb
+          text:
+            format: "%.0f %%"
+            args: ["x"]
+
+  - platform: homeassistant
+    id: pression
+    entity_id: sensor.salle_de_bain_tasmota_salle_de_bain_bmp180_pressure
+    on_value:
+      - lvgl.label.update:
+          id: lbl_pression
+          text:
+            format: "%.0f hPa"
+            args: ["x"]
+
+  # Météo actuelle
+  - platform: homeassistant
+    id: meteo_temp
+    entity_id: weather.forecast_home
+    attribute: temperature
+    on_value:
+      - lvgl.label.update:
+          id: lbl_meteo_temp
+          text:
+            format: "%.0f °C"
+            args: ["x"]
+      - lambda: |-
+          char b[16];
+          snprintf(b, sizeof(b), "%.1f°C", x);
+          for (char *p = b; *p; ++p) if (*p == '.') *p = ',';
+          lv_label_set_text(id(lbl_wm_temp), b);
+
+  # Batteries
+  - platform: homeassistant
+    id: bat_sam
+    entity_id: sensor.sm_a528b_battery_level
+    on_value:
+      - lvgl.label.update:
+          id: lbl_bat_sam
+          text:
+            format: "%.0f"
+            args: ["x"]
+      - lvgl.bar.update:
+          id: bar_bat_sam
+          value: !lambda return x;
+      - lambda: |-
+          uint32_t c = x < 20 ? 0xEF4444 : (x < 50 ? 0xF59E0B : 0x10B981);
+          lv_obj_set_style_text_color(id(ic_bat_sam), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(bar_bat_sam), lv_color_hex(c), LV_PART_INDICATOR);
+
+  - platform: homeassistant
+    id: bat_sono
+    entity_id: sensor.tel_musique_battery_level
+    on_value:
+      - lvgl.label.update:
+          id: lbl_bat_sono
+          text:
+            format: "%.0f"
+            args: ["x"]
+      - lvgl.bar.update:
+          id: bar_bat_sono
+          value: !lambda return x;
+      - lambda: |-
+          uint32_t c = x < 20 ? 0xEF4444 : (x < 50 ? 0xF59E0B : 0x10B981);
+          lv_obj_set_style_text_color(id(ic_bat_sono), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(bar_bat_sono), lv_color_hex(c), LV_PART_INDICATOR);
+
+  - platform: homeassistant
+    id: bat_tab
+    entity_id: sensor.tablette_samsung_battery_level
+    on_value:
+      - lvgl.label.update:
+          id: lbl_bat_tab
+          text:
+            format: "%.0f"
+            args: ["x"]
+      - lvgl.bar.update:
+          id: bar_bat_tab
+          value: !lambda return x;
+      - lambda: |-
+          uint32_t c = x < 20 ? 0xEF4444 : (x < 50 ? 0xF59E0B : 0x10B981);
+          lv_obj_set_style_text_color(id(ic_bat_tab), lv_color_hex(c), 0);
+          lv_obj_set_style_bg_color(id(bar_bat_tab), lv_color_hex(c), LV_PART_INDICATOR);
+
+  - platform: homeassistant
+    id: vol_sono
+    entity_id: input_number.volume_tel_sono
+    on_value:
+      - lvgl.label.update:
+          id: lbl_vol_sono
+          text:
+            format: "%.0f"
+            args: ["x"]
+
+  # Luminosité des lumières (attribut brightness 0-255)
+  - platform: homeassistant
+    id: br_cadre
+    entity_id: light.living_room_cadre_wled
+    attribute: brightness
+    on_value:
+      - lambda: |-
+          if (std::isnan(x)) return;
+          int p = (int) (x * 100.0f / 255.0f + 0.5f);
+          lv_slider_set_value(id(sl_cadre), p, LV_ANIM_OFF);
+          char b[8]; snprintf(b, sizeof(b), "%d%%", p);
+          lv_label_set_text(id(pct_cadre), b);
+
+  - platform: homeassistant
+    id: br_buffet
+    entity_id: light.buffet_groupe
+    attribute: brightness
+    on_value:
+      - lambda: |-
+          if (std::isnan(x)) return;
+          int p = (int) (x * 100.0f / 255.0f + 0.5f);
+          lv_slider_set_value(id(sl_buffet), p, LV_ANIM_OFF);
+          char b[8]; snprintf(b, sizeof(b), "%d%%", p);
+          lv_label_set_text(id(pct_buffet), b);
+
+  - platform: homeassistant
+    id: br_plafond
+    entity_id: light.wled_2
+    attribute: brightness
+    on_value:
+      - lambda: |-
+          if (std::isnan(x)) return;
+          int p = (int) (x * 100.0f / 255.0f + 0.5f);
+          lv_slider_set_value(id(sl_plafond), p, LV_ANIM_OFF);
+          char b[8]; snprintf(b, sizeof(b), "%d%%", p);
+          lv_label_set_text(id(pct_plafond), b);
+
+  - platform: homeassistant
+    id: br_matrice
+    entity_id: light.wled_3
+    attribute: brightness
+    on_value:
+      - lambda: |-
+          if (std::isnan(x)) return;
+          int p = (int) (x * 100.0f / 255.0f + 0.5f);
+          lv_slider_set_value(id(sl_matrice), p, LV_ANIM_OFF);
+          char b[8]; snprintf(b, sizeof(b), "%d%%", p);
+          lv_label_set_text(id(pct_matrice), b);
+
+  - platform: homeassistant
+    id: br_cube
+    entity_id: light.living_room_cube_wled_main
+    attribute: brightness
+    on_value:
+      - lambda: |-
+          if (std::isnan(x)) return;
+          int p = (int) (x * 100.0f / 255.0f + 0.5f);
+          lv_slider_set_value(id(sl_cube), p, LV_ANIM_OFF);
+          char b[8]; snprintf(b, sizeof(b), "%d%%", p);
+          lv_label_set_text(id(pct_cube), b);
+
+text_sensor:
+  - platform: homeassistant
+    id: meteo_cond
+    entity_id: weather.forecast_home
+    on_value:
+      - lambda: |-
+          const char *icon = "\U000F0590";
+          std::string txt = x;
+          uint32_t col = 0xB0BEC5;
+          if (x == "sunny")              { icon = "\U000F0599"; txt = "Ensoleillé";    col = 0xFBBF24; }
+          else if (x == "clear-night")   { icon = "\U000F0594"; txt = "Nuit dégagée";  col = 0xFDE68A; }
+          else if (x == "partlycloudy")  { icon = "\U000F0595"; txt = "Peu nuageux";   col = 0xFDE68A; }
+          else if (x == "cloudy")        { icon = "\U000F0590"; txt = "Nuageux";       col = 0xB0BEC5; }
+          else if (x == "rainy")         { icon = "\U000F0597"; txt = "Pluie";         col = 0x38BDF8; }
+          else if (x == "pouring")       { icon = "\U000F0596"; txt = "Forte pluie";   col = 0x3B82F6; }
+          else if (x == "snowy")         { icon = "\U000F0598"; txt = "Neige";         col = 0xE0F2FE; }
+          else if (x == "fog")           { icon = "\U000F0591"; txt = "Brouillard";    col = 0xCBD5E1; }
+          else if (x == "windy")         { icon = "\U000F059D"; txt = "Venteux";       col = 0x06B6D4; }
+          else if (x == "lightning" || x == "lightning-rainy") { icon = "\U000F0593"; txt = "Orage"; col = 0xFACC15; }
+          lv_label_set_text(id(lbl_meteo_cond), txt.c_str());
+          lv_label_set_text(id(lbl_meteo_icon), icon);
+          lv_obj_set_style_text_color(id(lbl_meteo_icon), lv_color_hex(col), 0);
+          lv_label_set_text(id(lbl_wm_cond), txt.c_str());
+          lv_label_set_text(id(lbl_wm_icon), icon);
+          lv_obj_set_style_text_color(id(lbl_wm_icon), lv_color_hex(col), 0);
+
+  # Couleur actuelle des lumières (pastille sur la page Lumières)
+  - platform: homeassistant
+    id: rgb_cadre
+    entity_id: light.living_room_cadre_wled
+    attribute: rgb_color
+    on_value:
+      - script.execute: {id: paint_swatch, idx: 0, rgb: !lambda 'return x;'}
+  - platform: homeassistant
+    id: rgb_buffet
+    entity_id: light.buffet_groupe
+    attribute: rgb_color
+    on_value:
+      - script.execute: {id: paint_swatch, idx: 1, rgb: !lambda 'return x;'}
+  - platform: homeassistant
+    id: rgb_plafond
+    entity_id: light.wled_2
+    attribute: rgb_color
+    on_value:
+      - script.execute: {id: paint_swatch, idx: 2, rgb: !lambda 'return x;'}
+  - platform: homeassistant
+    id: rgb_matrice
+    entity_id: light.wled_3
+    attribute: rgb_color
+    on_value:
+      - script.execute: {id: paint_swatch, idx: 3, rgb: !lambda 'return x;'}
+  - platform: homeassistant
+    id: rgb_cube
+    entity_id: light.living_room_cube_wled_main
+    attribute: rgb_color
+    on_value:
+      - script.execute: {id: paint_swatch, idx: 4, rgb: !lambda 'return x;'}
+
+  # Page actuellement affichée (visible dans HA)
+  - platform: template
+    id: ts_page
+    name: "Page ecran"
+
+  # Prévisions (attributs du capteur créé dans HA)
+  - platform: homeassistant
+    id: ts_fc_cond
+    entity_id: sensor.previsions_meteo
+    attribute: cond
+    on_value:
+      - script.execute: draw_forecast
+  - platform: homeassistant
+    id: ts_fc_tmax
+    entity_id: sensor.previsions_meteo
+    attribute: tmax
+    on_value:
+      - script.execute: draw_forecast
+  - platform: homeassistant
+    id: ts_fc_tmin
+    entity_id: sensor.previsions_meteo
+    attribute: tmin
+    on_value:
+      - script.execute: draw_forecast
+  - platform: homeassistant
+    id: ts_fc_rain
+    entity_id: sensor.previsions_meteo
+    attribute: rain
+    on_value:
+      - script.execute: draw_forecast
+  - platform: homeassistant
+    id: ts_fc_wspd
+    entity_id: sensor.previsions_meteo
+    attribute: wspd
+    on_value:
+      - script.execute: draw_forecast
+  - platform: homeassistant
+    id: ts_fc_wdir
+    entity_id: sensor.previsions_meteo
+    attribute: wdir
+    on_value:
+      - script.execute: draw_forecast
+  - platform: homeassistant
+    id: ts_fc_dow
+    entity_id: sensor.previsions_meteo
+    attribute: dow
+    on_value:
+      - script.execute: draw_forecast
+
+# ---------- Changer de page depuis Home Assistant ----------
+select:
+  - platform: template
+    id: sel_page
+    name: "Aller a la page"
+    optimistic: true
+    options:
+      - Accueil
+      - Lumieres
+      - Climat
+      - Securite
+      - Maison
+      - Meteo
+    initial_option: Accueil
+    set_action:
+      - script.execute: screen_wake
+      - if:
+          condition:
+            lambda: 'return x == "Accueil";'
+          then:
+            - lvgl.page.show: page_home
+      - if:
+          condition:
+            lambda: 'return x == "Lumieres";'
+          then:
+            - lvgl.page.show: page_lumieres
+      - if:
+          condition:
+            lambda: 'return x == "Climat";'
+          then:
+            - lvgl.page.show: page_climat
+      - if:
+          condition:
+            lambda: 'return x == "Securite";'
+          then:
+            - lvgl.page.show: page_securite
+      - if:
+          condition:
+            lambda: 'return x == "Maison";'
+          then:
+            - lvgl.page.show: page_maison
+      - if:
+          condition:
+            lambda: 'return x == "Meteo";'
+          then:
+            - lvgl.page.show: page_meteo
+
+# ---------- PIR + états on/off Home Assistant ----------
+binary_sensor:
+  # Capteur de mouvement HC-SR501 (sortie 3,3 V sur ${pir_pin})
+  - platform: gpio
+    id: pir
+    name: "Mouvement"
+    device_class: motion
+    pin:
+      number: ${pir_pin}
+      mode:
+        input: true
+        pulldown: true
+    filters:
+      - delayed_off: 5s
+    on_state:
+      - lambda: |-
+          lv_obj_set_style_text_color(id(hdr_pir), lv_color_hex(x ? 0x10B981 : 0x334155), 0);
+      - script.execute: screen_wake
+
+  - platform: homeassistant
+    id: st_lampe
+    trigger_on_initial_state: true
+    entity_id: ${lamp_entity}
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_lampe), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_lampe), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_lampe), x ? "Allumée" : "Éteinte");
+
+  - platform: homeassistant
+    id: st_chauffage
+    trigger_on_initial_state: true
+    entity_id: switch.tasmota_3
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_chauffage), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_chauffage), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_chauffage), x ? "Allumé" : "Éteint");
+
+  - platform: homeassistant
+    id: st_relais_zw
+    trigger_on_initial_state: true
+    entity_id: switch.relay_switch_1x2_5kw
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_relais_zw), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_relais_zw), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_relais_zw), x ? "Allumé" : "Éteint");
+
+  - platform: homeassistant
+    id: st_alarme
+    trigger_on_initial_state: true
+    entity_id: input_boolean.mode_alarme
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_alarme_sec), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_alarme_sec), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_alarme_sec), x ? "Armée" : "Désarmée");
+
+  - platform: homeassistant
+    id: st_alarme_auto
+    trigger_on_initial_state: true
+    entity_id: input_boolean.mode_alarme_auto
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_alarme_auto), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_alarme_auto), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_alarme_auto), x ? "Activé" : "Désactivé");
+
+  - platform: homeassistant
+    id: st_prise_sono
+    trigger_on_initial_state: true
+    entity_id: switch.tasmota_2
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_prise_sono), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_prise_sono), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_prise_sono), x ? "Allumée" : "Éteinte");
+          if (x) lv_obj_add_state(id(sw_sono_home), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_sono_home), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_sono_home), x ? "Allumée" : "Éteinte");
+
+  - platform: homeassistant
+    id: st_cadre
+    trigger_on_initial_state: true
+    entity_id: light.living_room_cadre_wled
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_cadre), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_cadre), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_cadre), x ? "Allumée" : "Éteinte");
+          if (!x) { lv_label_set_text(id(pct_cadre), "0%"); lv_slider_set_value(id(sl_cadre), 0, LV_ANIM_OFF); }
+
+  - platform: homeassistant
+    id: st_buffet
+    trigger_on_initial_state: true
+    entity_id: light.buffet_groupe
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_buffet), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_buffet), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_buffet), x ? "Allumée" : "Éteinte");
+          if (!x) { lv_label_set_text(id(pct_buffet), "0%"); lv_slider_set_value(id(sl_buffet), 0, LV_ANIM_OFF); }
+
+  - platform: homeassistant
+    id: st_plafond
+    trigger_on_initial_state: true
+    entity_id: light.wled_2
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_plafond), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_plafond), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_plafond), x ? "Allumée" : "Éteinte");
+          if (!x) { lv_label_set_text(id(pct_plafond), "0%"); lv_slider_set_value(id(sl_plafond), 0, LV_ANIM_OFF); }
+
+  - platform: homeassistant
+    id: st_matrice
+    trigger_on_initial_state: true
+    entity_id: light.wled_3
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_matrice), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_matrice), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_matrice), x ? "Allumée" : "Éteinte");
+          if (!x) { lv_label_set_text(id(pct_matrice), "0%"); lv_slider_set_value(id(sl_matrice), 0, LV_ANIM_OFF); }
+
+  - platform: homeassistant
+    id: st_cube
+    trigger_on_initial_state: true
+    entity_id: light.living_room_cube_wled_main
+    on_state:
+      - lambda: |-
+          if (x) lv_obj_add_state(id(sw_cube), LV_STATE_CHECKED); else lv_obj_clear_state(id(sw_cube), LV_STATE_CHECKED);
+          lv_label_set_text(id(sub_cube), x ? "Allumée" : "Éteinte");
+          if (!x) { lv_label_set_text(id(pct_cube), "0%"); lv_slider_set_value(id(sl_cube), 0, LV_ANIM_OFF); }
+
+# ---------- Variables ----------
+globals:
+  # Lumière dont on change la couleur (choisie sur la page Lumières)
+  - id: color_target
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+
+# ---------- Interface ----------
+lvgl:
+  displays:
+    - main_display
+  touchscreens:
+    - touch
+
+  style_definitions:
+    - id: style_card
+      bg_color: 0x070E1B
+      bg_opa: 95%
+      border_color: 0x1E2D4A
+      border_width: 1
+      border_opa: 60%
+      radius: 16
+      shadow_width: 0
+      pad_all: 0
+      text_color: 0xF1F5F9
+      text_font: r22
+    - id: style_navbtn
+      bg_opa: TRANSP
+      border_width: 0
+      shadow_width: 0
+      radius: 16
+      pad_all: 0
+      text_color: 0x8E9FB8
+
+  # Barre de navigation (icônes seules) + en-tête commun
+  top_layer:
+    widgets:
+      - obj:
+          id: nav_bar
+          hidden: true
+          x: 0
+          y: 0
+          width: 72
+          height: 480
+          pad_all: 0
+          scrollbar_mode: "OFF"
+          bg_color: 0x070E1B
+          bg_opa: COVER
+          border_width: 0
+          radius: 0
+          widgets:
+            - button:
+                id: nav_0
+                x: 8
+                y: 12
+                width: 56
+                height: 56
+                styles: style_navbtn
+                checkable: true
+                checked:
+                  bg_color: 0x12263F
+                  bg_opa: COVER
+                  text_color: 0x10B981
+                on_click:
+                  - lvgl.page.show:
+                      id: page_home
+                      animation: FADE_IN
+                      time: 250ms
+                widgets:
+                  - label: {text: "${mdi_home}", text_font: mdi_28, align: CENTER}
+            - button:
+                id: nav_1
+                x: 8
+                y: 104
+                width: 56
+                height: 56
+                styles: style_navbtn
+                checkable: true
+                checked:
+                  bg_color: 0x12263F
+                  bg_opa: COVER
+                  text_color: 0xF59E0B
+                on_click:
+                  - lvgl.page.show:
+                      id: page_lumieres
+                      animation: FADE_IN
+                      time: 250ms
+                widgets:
+                  - label: {text: "${mdi_bulb}", text_font: mdi_28, align: CENTER}
+            - button:
+                id: nav_2
+                x: 8
+                y: 196
+                width: 56
+                height: 56
+                styles: style_navbtn
+                checkable: true
+                checked:
+                  bg_color: 0x12263F
+                  bg_opa: COVER
+                  text_color: 0x06B6D4
+                on_click:
+                  - lvgl.page.show:
+                      id: page_climat
+                      animation: FADE_IN
+                      time: 250ms
+                widgets:
+                  - label: {text: "${mdi_therm}", text_font: mdi_28, align: CENTER}
+            - button:
+                id: nav_3
+                x: 8
+                y: 288
+                width: 56
+                height: 56
+                styles: style_navbtn
+                checkable: true
+                checked:
+                  bg_color: 0x12263F
+                  bg_opa: COVER
+                  text_color: 0xEF4444
+                on_click:
+                  - lvgl.page.show:
+                      id: page_securite
+                      animation: FADE_IN
+                      time: 250ms
+                widgets:
+                  - label: {text: "${mdi_shield}", text_font: mdi_28, align: CENTER}
+            - button:
+                id: nav_5
+                x: 8
+                y: 380
+                width: 56
+                height: 56
+                styles: style_navbtn
+                checkable: true
+                checked:
+                  bg_color: 0x12263F
+                  bg_opa: COVER
+                  text_color: 0x8B5CF6
+                on_click:
+                  - lvgl.page.show:
+                      id: page_maison
+                      animation: FADE_IN
+                      time: 250ms
+                widgets:
+                  - label: {text: "${mdi_cat}", text_font: mdi_28, align: CENTER}
+      - obj:
+          id: hdr_bar
+          hidden: true
+          x: 84
+          y: 6
+          width: 712
+          height: 36
+          styles: style_card
+          scrollbar_mode: "OFF"
+          widgets:
+            - label: {id: hdr_title, x: 16, y: 5, width: 400, text: "Accueil", text_font: r22, text_color: 0xF1F5F9, long_mode: CLIP}
+            - label: {id: hdr_pir, x: 526, y: 10, width: 24, text: "\uF06E", text_font: montserrat_16, text_color: 0x334155, text_align: CENTER}
+            - label: {id: hdr_time, x: 560, y: 5, width: 100, text: "--:--", text_font: r22, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+            - label: {id: hdr_wifi, x: 676, y: 9, width: 20, text: "\uF1EB", text_font: montserrat_16, text_color: 0x10B981, text_align: CENTER}
+      # Palette de couleurs des lumières (s'ouvre depuis la page Lumières)
+      - obj:
+          id: color_popup
+          hidden: true
+          x: 0
+          y: 0
+          width: 800
+          height: 480
+          pad_all: 0
+          radius: 0
+          border_width: 0
+          bg_color: 0x000000
+          bg_opa: 60%
+          scrollbar_mode: "OFF"
+          on_click:
+            - lvgl.widget.hide: color_popup
+          widgets:
+            - obj:
+                x: 150
+                y: 120
+                width: 500
+                height: 220
+                styles: style_card
+                bg_color: 0x0B1330
+                bg_opa: COVER
+                scrollbar_mode: "OFF"
+                widgets:
+                  - label: {id: lbl_color_title, x: 20, y: 18, width: 400, text: "Couleur", text_font: r22, long_mode: CLIP}
+                  - button: {x: 440, y: 10, width: 44, height: 40, styles: style_navbtn, on_click: [{lvgl.widget.hide: color_popup}], widgets: [{label: {text: "\uF00D", text_font: montserrat_16, align: CENTER}}]}
+                  - obj: {x: 18, y: 66, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0xFF0000, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 255, green: 0, blue: 0}}]}
+                  - obj: {x: 86, y: 66, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0xFF7F00, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 255, green: 127, blue: 0}}]}
+                  - obj: {x: 154, y: 66, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0xFFC800, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 255, green: 200, blue: 0}}]}
+                  - obj: {x: 222, y: 66, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0x80FF00, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 128, green: 255, blue: 0}}]}
+                  - obj: {x: 290, y: 66, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0x00FF00, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 0, green: 255, blue: 0}}]}
+                  - obj: {x: 358, y: 66, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0x00FFA0, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 0, green: 255, blue: 160}}]}
+                  - obj: {x: 426, y: 66, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0x00FFFF, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 0, green: 255, blue: 255}}]}
+                  - obj: {x: 18, y: 136, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0x0080FF, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 0, green: 128, blue: 255}}]}
+                  - obj: {x: 86, y: 136, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0x0000FF, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 0, green: 0, blue: 255}}]}
+                  - obj: {x: 154, y: 136, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0x8000FF, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 128, green: 0, blue: 255}}]}
+                  - obj: {x: 222, y: 136, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0xFF00FF, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 255, green: 0, blue: 255}}]}
+                  - obj: {x: 290, y: 136, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0xFF0080, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 255, green: 0, blue: 128}}]}
+                  - obj: {x: 358, y: 136, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0xFFAA50, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 255, green: 170, blue: 80}}]}
+                  - obj: {x: 426, y: 136, width: 56, height: 56, radius: 28, clickable: true, scrollbar_mode: "OFF", bg_color: 0xFFFFFF, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 30%, on_click: [{script.execute: {id: set_color, red: 255, green: 255, blue: 255}}]}
+
+  pages:
+    # ===================== DÉMARRAGE =====================
+    - id: page_splash
+      bg_color: 0x08142D
+      bg_opa: 100%
+      text_color: 0xF1F5F9
+      on_load:
+        - lvgl.widget.hide: nav_bar
+        - lvgl.widget.hide: hdr_bar
+        - delay: 2200ms
+        - lvgl.widget.show: nav_bar
+        - lvgl.widget.show: hdr_bar
+        - lvgl.page.show:
+            id: page_home
+            animation: FADE_IN
+            time: 600ms
+      widgets:
+        - label: {id: splash_icon, text: "${mdi_home}", text_font: mdi_64, text_color: 0x06B6D4, align: CENTER, y: -40}
+        - label: {text: "Maison", text_font: r40, text_color: 0xF1F5F9, align: CENTER, y: 40}
+
+    # ===================== ACCUEIL =====================
+    - id: page_home
+      bg_color: 0x08142D
+      bg_opa: 100%
+      text_color: 0xF1F5F9
+      on_load:
+        - script.execute:
+            id: set_nav
+            idx: 0
+            title: "Accueil"
+      widgets:
+        # Météo (cliquable : ouvre la page Météo)
+        - obj:
+            id: card_meteo
+            x: 84
+            y: 48
+            width: 228
+            height: 150
+            styles: style_card
+            scrollbar_mode: "OFF"
+            clickable: true
+            on_click:
+              - lvgl.page.show:
+                  id: page_meteo
+                  animation: FADE_IN
+                  time: 250ms
+            widgets:
+              - label: {text: "MÉTÉO", x: 16, y: 10, text_font: r16, text_color: 0xB6C2D6}
+              - label: {text: "\uF054", x: 198, y: 10, text_font: montserrat_16, text_color: 0xB6C2D6}
+              - label: {id: lbl_meteo_icon, text: "${mdi_cloud}", x: 10, y: 40, text_font: mdi_64, text_color: 0xB0BEC5}
+              - label: {id: lbl_meteo_temp, text: "-- °C", x: 90, y: 54, width: 130, text_font: r40, text_color: 0xF1F5F9, long_mode: CLIP}
+              - label: {id: lbl_meteo_cond, text: "--", x: 16, y: 116, width: 196, text_font: r22, text_color: 0xE2E8F0, long_mode: CLIP}
+        # Salon
+        - obj:
+            x: 326
+            y: 48
+            width: 228
+            height: 150
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_salon, text: "${mdi_sofa}", x: 14, y: 12, text_font: mdi_40, text_color: 0x10B981}
+              - label: {x: 60, y: 16, width: 154, text: "Salon", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_salon, text: "--", x: 14, y: 56, width: 130, text_font: r56, long_mode: CLIP}
+              - label: {text: "°C", x: 150, y: 80, text_font: r22, text_color: 0xB6C2D6}
+              - obj: {id: ln_salon, x: 14, y: 134, width: 200, height: 2, radius: 1, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        # Chambre
+        - obj:
+            x: 568
+            y: 48
+            width: 228
+            height: 150
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_chambre, text: "${mdi_bed}", x: 14, y: 12, text_font: mdi_40, text_color: 0x10B981}
+              - label: {x: 60, y: 16, width: 154, text: "Chambre", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_chambre, text: "--", x: 14, y: 56, width: 130, text_font: r56, long_mode: CLIP}
+              - label: {text: "°C", x: 150, y: 80, text_font: r22, text_color: 0xB6C2D6}
+              - obj: {id: ln_chambre, x: 14, y: 134, width: 200, height: 2, radius: 1, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        # Salle de bain
+        - obj:
+            x: 84
+            y: 210
+            width: 228
+            height: 262
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_sdb_home, text: "${mdi_drop}", x: 14, y: 14, text_font: mdi_40, text_color: 0x38BDF8}
+              - label: {x: 60, y: 18, width: 154, text: "Salle de bain", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_sdb_home, text: "--", x: 0, y: 92, width: 228, text_font: r72, text_align: CENTER, long_mode: CLIP}
+              - label: {text: "°C", x: 0, y: 182, width: 228, text_font: r22, text_color: 0xB6C2D6, text_align: CENTER}
+              - obj: {id: ln_sdb_home, x: 14, y: 242, width: 200, height: 2, radius: 1, bg_color: 0x38BDF8, bg_opa: COVER, border_width: 0}
+        # Extérieur
+        - obj:
+            x: 326
+            y: 210
+            width: 228
+            height: 262
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_ext_home, text: "${mdi_therm}", x: 14, y: 14, text_font: mdi_40, text_color: 0x10B981}
+              - label: {x: 60, y: 18, width: 154, text: "Extérieur", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_ext_home, text: "--", x: 0, y: 92, width: 228, text_font: r72, text_align: CENTER, long_mode: CLIP}
+              - label: {text: "°C", x: 0, y: 182, width: 228, text_font: r22, text_color: 0xB6C2D6, text_align: CENTER}
+              - obj: {id: ln_ext_home, x: 14, y: 242, width: 200, height: 2, radius: 1, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        # Lampe
+        - obj:
+            id: card_lampe
+            x: 568
+            y: 210
+            width: 228
+            height: 58
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {id: bar_lampe, x: 4, y: 12, width: 3, height: 34, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0xF59E0B, bg_opa: 80%, radius: 8}}
+              - label: {x: 16, y: 4, width: 150, text: "Lampe", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_lampe, x: 16, y: 32, width: 150, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - switch: {id: sw_lampe, x: 170, y: 14, width: 50, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0xF59E0B, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: light.toggle, data: {entity_id: "${lamp_entity}"}}}]}
+        # Chauffage salle de bain (relais Tasmota 3)
+        - obj:
+            id: card_chauffage
+            x: 568
+            y: 278
+            width: 228
+            height: 58
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {id: bar_chauffage, x: 4, y: 12, width: 3, height: 34, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0xF97316, bg_opa: 80%, radius: 8}}
+              - label: {x: 16, y: 4, width: 150, text: "Chauffage SDB", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_chauffage, x: 16, y: 32, width: 150, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - switch: {id: sw_chauffage, x: 170, y: 14, width: 50, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0xF97316, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: switch.toggle, data: {entity_id: "switch.tasmota_3"}}}]}
+        # Prise sono (Tasmota 2)
+        - obj:
+            id: card_sono_home
+            x: 568
+            y: 346
+            width: 228
+            height: 58
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {id: bar_sono_home, x: 4, y: 12, width: 3, height: 34, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x8B5CF6, bg_opa: 80%, radius: 8}}
+              - label: {x: 16, y: 4, width: 150, text: "Prise sono", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_sono_home, x: 16, y: 32, width: 150, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - switch: {id: sw_sono_home, x: 170, y: 14, width: 50, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0x8B5CF6, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: switch.toggle, data: {entity_id: "switch.tasmota_2"}}}]}
+        # Croquettes (même format que les interrupteurs)
+        - button:
+            id: card_croquettes
+            x: 568
+            y: 414
+            width: 228
+            height: 58
+            styles: style_card
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.croquettes
+            widgets:
+              - bar: {x: 4, y: 12, width: 3, height: 34, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0xF59E0B, bg_opa: 80%, radius: 8}}
+              - label: {x: 16, y: 4, width: 150, text: "Croquettes", text_font: r22, long_mode: CLIP}
+              - label: {x: 16, y: 32, width: 150, text: "Pierrette", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - label: {text: "${mdi_paw}", x: 182, y: 14, text_font: mdi_28, text_color: 0xF59E0B}
+
+    # ===================== LUMIÈRES =====================
+    - id: page_lumieres
+      bg_color: 0x08142D
+      bg_opa: 100%
+      text_color: 0xF1F5F9
+      on_load:
+        - script.execute:
+            id: set_nav
+            idx: 1
+            title: "Lumières"
+      widgets:
+        - obj:
+            id: dm_cadre
+            x: 84
+            y: 48
+            width: 712
+            height: 76
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {id: bar_cadre, x: 10, y: 8, width: 4, height: 60, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0xF59E0B, bg_opa: 80%, radius: 3}}
+              - label: {x: 26, y: 6, width: 400, text: "Cadre", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_cadre, x: 26, y: 32, width: 300, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - label: {id: pct_cadre, x: 420, y: 4, width: 130, text: "0%", text_font: r28, text_color: 0xF59E0B, text_align: RIGHT, long_mode: CLIP}
+              - obj: {id: col_cadre, x: 566, y: 6, width: 56, height: 34, radius: 17, clickable: true, scrollbar_mode: "OFF", bg_color: 0x334155, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 50%, on_click: [{lambda: 'id(color_target) = "light.living_room_cadre_wled"; lv_label_set_text(id(lbl_color_title), "Couleur : Cadre");'}, {lvgl.widget.show: color_popup}]}
+              - switch: {id: sw_cadre, x: 636, y: 8, width: 56, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0xF59E0B, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: light.toggle, data: {entity_id: light.living_room_cadre_wled}}}]}
+              - slider: {id: sl_cadre, x: 26, y: 54, width: 666, height: 14, value: 0, min_value: 0, max_value: 100, bg_color: 0x0F1929, border_width: 0, indicator: {bg_color: 0xF59E0B, bg_opa: 80%, radius: 8}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, border_width: 0, radius: 50, pad_all: 0}, on_release: [{homeassistant.action: {action: light.turn_on, data: {entity_id: light.living_room_cadre_wled, brightness_pct: !lambda 'return to_string(lv_slider_get_value(id(sl_cadre)));'}}}]}
+        - obj:
+            id: dm_buffet
+            x: 84
+            y: 132
+            width: 712
+            height: 76
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {id: bar_buffet, x: 10, y: 8, width: 4, height: 60, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0xFBBF24, bg_opa: 80%, radius: 3}}
+              - label: {x: 26, y: 6, width: 400, text: "Buffet", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_buffet, x: 26, y: 32, width: 300, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - label: {id: pct_buffet, x: 420, y: 4, width: 130, text: "0%", text_font: r28, text_color: 0xFBBF24, text_align: RIGHT, long_mode: CLIP}
+              - obj: {id: col_buffet, x: 566, y: 6, width: 56, height: 34, radius: 17, clickable: true, scrollbar_mode: "OFF", bg_color: 0x334155, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 50%, on_click: [{lambda: 'id(color_target) = "light.buffet_groupe"; lv_label_set_text(id(lbl_color_title), "Couleur : Buffet");'}, {lvgl.widget.show: color_popup}]}
+              - switch: {id: sw_buffet, x: 636, y: 8, width: 56, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0xFBBF24, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: light.toggle, data: {entity_id: light.buffet_groupe}}}]}
+              - slider: {id: sl_buffet, x: 26, y: 54, width: 666, height: 14, value: 0, min_value: 0, max_value: 100, bg_color: 0x0F1929, border_width: 0, indicator: {bg_color: 0xFBBF24, bg_opa: 80%, radius: 8}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, border_width: 0, radius: 50, pad_all: 0}, on_release: [{homeassistant.action: {action: light.turn_on, data: {entity_id: light.buffet_groupe, brightness_pct: !lambda 'return to_string(lv_slider_get_value(id(sl_buffet)));'}}}]}
+        - obj:
+            id: dm_plafond
+            x: 84
+            y: 216
+            width: 712
+            height: 76
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {id: bar_plafond, x: 10, y: 8, width: 4, height: 60, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x3B82F6, bg_opa: 80%, radius: 3}}
+              - label: {x: 26, y: 6, width: 400, text: "Plafond", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_plafond, x: 26, y: 32, width: 300, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - label: {id: pct_plafond, x: 420, y: 4, width: 130, text: "0%", text_font: r28, text_color: 0x3B82F6, text_align: RIGHT, long_mode: CLIP}
+              - obj: {id: col_plafond, x: 566, y: 6, width: 56, height: 34, radius: 17, clickable: true, scrollbar_mode: "OFF", bg_color: 0x334155, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 50%, on_click: [{lambda: 'id(color_target) = "light.wled_2"; lv_label_set_text(id(lbl_color_title), "Couleur : Plafond");'}, {lvgl.widget.show: color_popup}]}
+              - switch: {id: sw_plafond, x: 636, y: 8, width: 56, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0x3B82F6, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: light.toggle, data: {entity_id: light.wled_2}}}]}
+              - slider: {id: sl_plafond, x: 26, y: 54, width: 666, height: 14, value: 0, min_value: 0, max_value: 100, bg_color: 0x0F1929, border_width: 0, indicator: {bg_color: 0x3B82F6, bg_opa: 80%, radius: 8}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, border_width: 0, radius: 50, pad_all: 0}, on_release: [{homeassistant.action: {action: light.turn_on, data: {entity_id: light.wled_2, brightness_pct: !lambda 'return to_string(lv_slider_get_value(id(sl_plafond)));'}}}]}
+        - obj:
+            id: dm_matrice
+            x: 84
+            y: 300
+            width: 712
+            height: 76
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {id: bar_matrice, x: 10, y: 8, width: 4, height: 60, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x8B5CF6, bg_opa: 80%, radius: 3}}
+              - label: {x: 26, y: 6, width: 400, text: "Plafond Matrice", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_matrice, x: 26, y: 32, width: 300, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - label: {id: pct_matrice, x: 420, y: 4, width: 130, text: "0%", text_font: r28, text_color: 0x8B5CF6, text_align: RIGHT, long_mode: CLIP}
+              - obj: {id: col_matrice, x: 566, y: 6, width: 56, height: 34, radius: 17, clickable: true, scrollbar_mode: "OFF", bg_color: 0x334155, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 50%, on_click: [{lambda: 'id(color_target) = "light.wled_3"; lv_label_set_text(id(lbl_color_title), "Couleur : Plafond Matrice");'}, {lvgl.widget.show: color_popup}]}
+              - switch: {id: sw_matrice, x: 636, y: 8, width: 56, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0x8B5CF6, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: light.toggle, data: {entity_id: light.wled_3}}}]}
+              - slider: {id: sl_matrice, x: 26, y: 54, width: 666, height: 14, value: 0, min_value: 0, max_value: 100, bg_color: 0x0F1929, border_width: 0, indicator: {bg_color: 0x8B5CF6, bg_opa: 80%, radius: 8}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, border_width: 0, radius: 50, pad_all: 0}, on_release: [{homeassistant.action: {action: light.turn_on, data: {entity_id: light.wled_3, brightness_pct: !lambda 'return to_string(lv_slider_get_value(id(sl_matrice)));'}}}]}
+        - obj:
+            id: dm_cube
+            x: 84
+            y: 384
+            width: 712
+            height: 76
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {id: bar_cube, x: 10, y: 8, width: 4, height: 60, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x06B6D4, bg_opa: 80%, radius: 3}}
+              - label: {x: 26, y: 6, width: 400, text: "Cube", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_cube, x: 26, y: 32, width: 300, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - label: {id: pct_cube, x: 420, y: 4, width: 130, text: "0%", text_font: r28, text_color: 0x06B6D4, text_align: RIGHT, long_mode: CLIP}
+              - obj: {id: col_cube, x: 566, y: 6, width: 56, height: 34, radius: 17, clickable: true, scrollbar_mode: "OFF", bg_color: 0x334155, bg_opa: COVER, border_width: 2, border_color: 0xFFFFFF, border_opa: 50%, on_click: [{lambda: 'id(color_target) = "light.living_room_cube_wled_main"; lv_label_set_text(id(lbl_color_title), "Couleur : Cube");'}, {lvgl.widget.show: color_popup}]}
+              - switch: {id: sw_cube, x: 636, y: 8, width: 56, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0x06B6D4, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: light.toggle, data: {entity_id: light.living_room_cube_wled_main}}}]}
+              - slider: {id: sl_cube, x: 26, y: 54, width: 666, height: 14, value: 0, min_value: 0, max_value: 100, bg_color: 0x0F1929, border_width: 0, indicator: {bg_color: 0x06B6D4, bg_opa: 80%, radius: 8}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, border_width: 0, radius: 50, pad_all: 0}, on_release: [{homeassistant.action: {action: light.turn_on, data: {entity_id: light.living_room_cube_wled_main, brightness_pct: !lambda 'return to_string(lv_slider_get_value(id(sl_cube)));'}}}]}
+
+    # ===================== CLIMAT =====================
+    - id: page_climat
+      bg_color: 0x08142D
+      bg_opa: 100%
+      text_color: 0xF1F5F9
+      on_load:
+        - script.execute:
+            id: set_nav
+            idx: 2
+            title: "Climat"
+      widgets:
+        # Ligne du haut : 4 températures en grand
+        - obj:
+            x: 84
+            y: 48
+            width: 170
+            height: 308
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_salon_clim, text: "${mdi_sofa}", x: 12, y: 14, text_font: mdi_40, text_color: 0x10B981}
+              - label: {x: 56, y: 18, width: 100, text: "Salon", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_salon_clim, text: "--", x: 0, y: 112, width: 170, text_font: r72, text_align: CENTER, long_mode: CLIP}
+              - label: {text: "°C", x: 0, y: 202, width: 170, text_font: r22, text_color: 0xB6C2D6, text_align: CENTER}
+              - obj: {id: ln_salon_clim, x: 12, y: 286, width: 146, height: 2, radius: 1, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj:
+            x: 264
+            y: 48
+            width: 170
+            height: 308
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_chambre_clim, text: "${mdi_bed}", x: 12, y: 14, text_font: mdi_40, text_color: 0x10B981}
+              - label: {x: 56, y: 18, width: 100, text: "Chambre", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_chambre_clim, text: "--", x: 0, y: 112, width: 170, text_font: r72, text_align: CENTER, long_mode: CLIP}
+              - label: {text: "°C", x: 0, y: 202, width: 170, text_font: r22, text_color: 0xB6C2D6, text_align: CENTER}
+              - obj: {id: ln_chambre_clim, x: 12, y: 286, width: 146, height: 2, radius: 1, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj:
+            x: 444
+            y: 48
+            width: 170
+            height: 308
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_sdb_clim, text: "${mdi_drop}", x: 12, y: 14, text_font: mdi_40, text_color: 0x38BDF8}
+              - label: {x: 56, y: 18, width: 100, text: "SDB", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_sdb_clim, text: "--", x: 0, y: 112, width: 170, text_font: r72, text_align: CENTER, long_mode: CLIP}
+              - label: {text: "°C", x: 0, y: 202, width: 170, text_font: r22, text_color: 0xB6C2D6, text_align: CENTER}
+              - obj: {id: ln_sdb_clim, x: 12, y: 286, width: 146, height: 2, radius: 1, bg_color: 0x38BDF8, bg_opa: COVER, border_width: 0}
+        - obj:
+            x: 624
+            y: 48
+            width: 172
+            height: 308
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_ext_clim, text: "${mdi_therm}", x: 12, y: 14, text_font: mdi_40, text_color: 0x10B981}
+              - label: {x: 56, y: 18, width: 102, text: "Extérieur", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_ext_clim, text: "--", x: 0, y: 112, width: 172, text_font: r72, text_align: CENTER, long_mode: CLIP}
+              - label: {text: "°C", x: 0, y: 202, width: 172, text_font: r22, text_color: 0xB6C2D6, text_align: CENTER}
+              - obj: {id: ln_ext_clim, x: 12, y: 286, width: 148, height: 2, radius: 1, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        # Ligne du bas : humidité SDB et pression (compactes)
+        - obj:
+            x: 84
+            y: 368
+            width: 351
+            height: 104
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {text: "${mdi_drop}", x: 16, y: 30, text_font: mdi_40, text_color: 0x3B82F6}
+              - label: {x: 72, y: 12, width: 260, text: "Humidité SDB", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - label: {id: lbl_hum_sdb, text: "--", x: 72, y: 36, width: 260, text_font: r40, long_mode: CLIP}
+              - obj: {x: 16, y: 92, width: 319, height: 2, radius: 1, bg_color: 0x3B82F6, bg_opa: COVER, border_width: 0}
+        - obj:
+            x: 445
+            y: 368
+            width: 351
+            height: 104
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {text: "${mdi_gauge}", x: 16, y: 30, text_font: mdi_40, text_color: 0x8B5CF6}
+              - label: {x: 72, y: 12, width: 260, text: "Pression", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - label: {id: lbl_pression, text: "--", x: 72, y: 36, width: 260, text_font: r40, long_mode: CLIP}
+              - obj: {x: 16, y: 92, width: 319, height: 2, radius: 1, bg_color: 0x8B5CF6, bg_opa: COVER, border_width: 0}
+
+    # ===================== SÉCURITÉ (alarme + caméra) =====================
+    - id: page_securite
+      bg_color: 0x08142D
+      bg_opa: 100%
+      text_color: 0xF1F5F9
+      on_load:
+        - script.execute:
+            id: set_nav
+            idx: 3
+            title: "Sécurité"
+        - script.execute: cam_loop
+      on_unload:
+        - script.stop: cam_loop
+      widgets:
+        # Image (rafraîchie toutes les 3 s)
+        - obj:
+            x: 84
+            y: 48
+            width: 488
+            height: 274
+            styles: style_card
+            scrollbar_mode: "OFF"
+            bg_color: 0x000000
+            bg_opa: COVER
+            widgets:
+              - label: {text: "Chargement de la caméra…", text_font: r16, text_color: 0xB6C2D6, align: CENTER}
+              - image: {id: img_cam, src: camera_img, align: CENTER}
+        # Croix directionnelle
+        - button:
+            x: 658
+            y: 48
+            width: 64
+            height: 64
+            styles: style_card
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.cam_salon_haut
+            widgets:
+              - label: {text: "\uF077", text_font: montserrat_28, text_color: 0x06B6D4, align: CENTER}
+        - button:
+            x: 586
+            y: 116
+            width: 64
+            height: 64
+            styles: style_card
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.cam_salon_gauche
+            widgets:
+              - label: {text: "\uF053", text_font: montserrat_28, text_color: 0x06B6D4, align: CENTER}
+        - button:
+            x: 658
+            y: 116
+            width: 64
+            height: 64
+            styles: style_card
+            bg_color: 0x2A1216
+            border_color: 0xEF4444
+            border_opa: 80%
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.cam_salon_stop
+            widgets:
+              - label: {text: "\uF04D", text_font: montserrat_28, text_color: 0xEF4444, align: CENTER}
+        - button:
+            x: 730
+            y: 116
+            width: 64
+            height: 64
+            styles: style_card
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.cam_salon_droite
+            widgets:
+              - label: {text: "\uF054", text_font: montserrat_28, text_color: 0x06B6D4, align: CENTER}
+        - button:
+            x: 658
+            y: 184
+            width: 64
+            height: 64
+            styles: style_card
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.cam_salon_bas
+            widgets:
+              - label: {text: "\uF078", text_font: montserrat_28, text_color: 0x06B6D4, align: CENTER}
+        # Presets
+        - button:
+            x: 84
+            y: 332
+            width: 154
+            height: 66
+            styles: style_card
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.cam_salon_preset
+                  data:
+                    number: "0"
+            widgets:
+              - label: {text: "Preset 1", align: CENTER}
+        - button:
+            x: 246
+            y: 332
+            width: 154
+            height: 66
+            styles: style_card
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.cam_salon_preset
+                  data:
+                    number: "1"
+            widgets:
+              - label: {text: "Preset 2", align: CENTER}
+        - button:
+            x: 408
+            y: 332
+            width: 154
+            height: 66
+            styles: style_card
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.cam_salon_preset
+                  data:
+                    number: "2"
+            widgets:
+              - label: {text: "Preset 3", align: CENTER}
+        # Mode alarme / alarme automatique
+        - obj:
+            id: card_alarme_sec
+            x: 84
+            y: 406
+            width: 239
+            height: 66
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {x: 4, y: 12, width: 3, height: 42, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0xEF4444, bg_opa: 80%, radius: 8}}
+              - label: {x: 16, y: 6, width: 160, text: "Mode alarme", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_alarme_sec, x: 16, y: 36, width: 160, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - switch: {id: sw_alarme_sec, x: 175, y: 18, width: 54, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0xEF4444, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: input_boolean.toggle, data: {entity_id: input_boolean.mode_alarme}}}]}
+        - obj:
+            id: card_alarme_auto
+            x: 333
+            y: 406
+            width: 239
+            height: 66
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {x: 4, y: 12, width: 3, height: 42, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x8B5CF6, bg_opa: 80%, radius: 8}}
+              - label: {x: 16, y: 6, width: 160, text: "Alarme auto", text_font: r22, long_mode: CLIP}
+              - label: {id: sub_alarme_auto, x: 16, y: 36, width: 160, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - switch: {id: sw_alarme_auto, x: 175, y: 18, width: 54, height: 30, bg_color: 0x0F1929, bg_opa: 100%, radius: 15, indicator: {bg_color: 0x8B5CF6, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: input_boolean.toggle, data: {entity_id: input_boolean.mode_alarme_auto}}}]}
+        # Alarme de la caméra
+        - obj:
+            x: 586
+            y: 258
+            width: 210
+            height: 214
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {text: "${mdi_cctv}", x: 12, y: 8, text_font: mdi_28, text_color: 0x3B82F6}
+              - label: {text: "Alarme caméra", x: 50, y: 12, width: 150, text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - button:
+                  x: 12
+                  y: 50
+                  width: 186
+                  height: 70
+                  styles: style_card
+                  bg_color: 0x0F2A22
+                  border_color: 0x10B981
+                  border_opa: 80%
+                  on_click:
+                    - homeassistant.action:
+                        action: rest_command.cam_salon_alarm_on
+                  widgets:
+                    - label: {text: "Activer", text_color: 0x10B981, align: CENTER}
+              - button:
+                  x: 12
+                  y: 132
+                  width: 186
+                  height: 70
+                  styles: style_card
+                  bg_color: 0x2A1216
+                  border_color: 0xEF4444
+                  border_opa: 80%
+                  on_click:
+                    - homeassistant.action:
+                        action: rest_command.cam_salon_alarm_off
+                  widgets:
+                    - label: {text: "Désactiver", text_color: 0xEF4444, align: CENTER}
+
+    # ===================== MAISON =====================
+    - id: page_maison
+      bg_color: 0x08142D
+      bg_opa: 100%
+      text_color: 0xF1F5F9
+      on_load:
+        - script.execute:
+            id: set_nav
+            idx: 5
+            title: "Maison"
+      widgets:
+        # Croquettes
+        - button:
+            x: 84
+            y: 48
+            width: 349
+            height: 96
+            styles: style_card
+            on_click:
+              - homeassistant.action:
+                  action: rest_command.croquettes
+            widgets:
+              - label: {text: "${mdi_paw}", x: 22, y: 26, text_font: mdi_40, text_color: 0xF59E0B}
+              - label: {text: "Croquettes", x: 78, y: 16, text_font: r28}
+              - label: {text: "Pierrette", x: 80, y: 56, text_font: r16, text_color: 0xB6C2D6}
+        # Prise sono
+        - obj:
+            id: card_prise_sono
+            x: 447
+            y: 48
+            width: 349
+            height: 96
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {x: 8, y: 12, width: 4, height: 72, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x8B5CF6, bg_opa: 80%, radius: 3}}
+              - label: {text: "${mdi_speaker}", x: 26, y: 26, text_font: mdi_40, text_color: 0x8B5CF6}
+              - label: {text: "Prise sono", x: 82, y: 16, text_font: r28}
+              - label: {id: sub_prise_sono, x: 84, y: 56, width: 150, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - switch: {id: sw_prise_sono, x: 262, y: 30, width: 66, height: 36, bg_color: 0x0F1929, bg_opa: 100%, radius: 18, indicator: {bg_color: 0x8B5CF6, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: switch.toggle, data: {entity_id: switch.tasmota_2}}}]}
+        # Volume téléphone
+        - obj:
+            x: 84
+            y: 156
+            width: 349
+            height: 120
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {text: "${mdi_volume}", x: 14, y: 12, text_font: mdi_40, text_color: 0x8B5CF6}
+              - label: {x: 60, y: 16, width: 275, text: "Volume téléphone sono", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_vol_sono, text: "--", x: 14, y: 40, width: 200, text_font: r56, long_mode: CLIP}
+              - line: {x: 14, y: 106, points: ["0, 0", "321, 0"], line_color: 0x8B5CF6, line_width: 2, line_rounded: true}
+        # Relais Z-Wave
+        - obj:
+            id: card_relais_zw
+            x: 447
+            y: 156
+            width: 349
+            height: 120
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - bar: {x: 8, y: 12, width: 4, height: 96, value: 100, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x10B981, bg_opa: 80%, radius: 3}}
+              - label: {text: "${mdi_plug}", x: 26, y: 38, text_font: mdi_40, text_color: 0x10B981}
+              - label: {text: "Relais Z-Wave", x: 82, y: 32, width: 175, text_font: r22, long_mode: CLIP}
+              - label: {id: sub_relais_zw, x: 84, y: 70, width: 150, text: "--", text_font: r16, text_color: 0xB6C2D6, long_mode: CLIP}
+              - switch: {id: sw_relais_zw, x: 262, y: 42, width: 66, height: 36, bg_color: 0x0F1929, bg_opa: 100%, radius: 18, indicator: {bg_color: 0x10B981, bg_opa: 100%}, knob: {bg_color: 0xFFFFFF, bg_opa: 100%, radius: 100%}, on_click: [{homeassistant.action: {action: switch.toggle, data: {entity_id: switch.relay_switch_1x2_5kw}}}]}
+        # Batteries
+        - obj:
+            x: 84
+            y: 288
+            width: 228
+            height: 184
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_bat_sam, text: "${mdi_phone}", x: 14, y: 12, text_font: mdi_40, text_color: 0x10B981}
+              - label: {x: 60, y: 16, width: 154, text: "Samsung", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_bat_sam, text: "--", x: 14, y: 68, width: 110, text_font: r56, long_mode: CLIP}
+              - label: {text: "%", x: 130, y: 92, text_font: r22, text_color: 0xB6C2D6}
+              - bar: {id: bar_bat_sam, x: 14, y: 154, width: 200, height: 12, value: 0, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x10B981, bg_opa: 80%, radius: 6}}
+        - obj:
+            x: 326
+            y: 288
+            width: 228
+            height: 184
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_bat_sono, text: "${mdi_speaker}", x: 14, y: 12, text_font: mdi_40, text_color: 0x10B981}
+              - label: {x: 60, y: 16, width: 154, text: "Tél. sono", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_bat_sono, text: "--", x: 14, y: 68, width: 110, text_font: r56, long_mode: CLIP}
+              - label: {text: "%", x: 130, y: 92, text_font: r22, text_color: 0xB6C2D6}
+              - bar: {id: bar_bat_sono, x: 14, y: 154, width: 200, height: 12, value: 0, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x10B981, bg_opa: 80%, radius: 6}}
+        - obj:
+            x: 568
+            y: 288
+            width: 228
+            height: 184
+            styles: style_card
+            scrollbar_mode: "OFF"
+            widgets:
+              - label: {id: ic_bat_tab, text: "${mdi_tablet}", x: 14, y: 12, text_font: mdi_40, text_color: 0x10B981}
+              - label: {x: 60, y: 16, width: 154, text: "Tablette", text_font: r16, text_color: 0xB6C2D6, text_align: RIGHT, long_mode: CLIP}
+              - label: {id: lbl_bat_tab, text: "--", x: 14, y: 68, width: 110, text_font: r56, long_mode: CLIP}
+              - label: {text: "%", x: 130, y: 92, text_font: r22, text_color: 0xB6C2D6}
+              - bar: {id: bar_bat_tab, x: 14, y: 154, width: 200, height: 12, value: 0, min_value: 0, max_value: 100, bg_color: 0x0F1929, bg_opa: 100%, indicator: {bg_color: 0x10B981, bg_opa: 80%, radius: 6}}
+
+    # ===================== MÉTÉO (détail + prévisions) =====================
+    - id: page_meteo
+      bg_color: 0x08142D
+      bg_opa: 100%
+      text_color: 0xF1F5F9
+      on_load:
+        - script.execute:
+            id: set_nav
+            idx: 99
+            title: "Météo"
+      widgets:
+        - obj: {x: 84, y: 48, width: 712, height: 424, styles: style_card, scrollbar_mode: "OFF", bg_color: 0x0B1330, border_color: 0x1E2D4A}
+
+        # En-tête : condition actuelle
+        - label: {id: lbl_wm_icon, text: "${mdi_cloud}", text_font: mdi_64, text_color: 0xB0BEC5, x: 106, y: 58}
+        - label: {id: lbl_wm_cond, text: "--", text_font: r28, text_color: 0xF1F5F9, x: 190, y: 62}
+        - label: {text: "Maintenant", text_font: r16, text_color: 0xB6C2D6, x: 192, y: 100}
+        - label: {id: lbl_wm_temp, text: "-- °C", text_font: r40, text_color: 0xF1F5F9, width: 220, text_align: RIGHT, x: 560, y: 56}
+        - label: {id: lbl_wm_minmax, text: "--", text_font: r16, text_color: 0xB6C2D6, width: 220, text_align: RIGHT, x: 560, y: 106}
+        - label: {text: "Prévisions", text_font: r22, text_color: 0xE2E8F0, x: 104, y: 140}
+
+        # Courbes : points interpolés (max en vert, min en jaune)
+        - obj: {id: mh_0_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_0_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_0_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_0_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_0_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_1_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_1_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_1_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_1_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_1_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_2_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_2_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_2_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_2_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_2_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_3_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_3_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_3_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_3_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_3_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_4_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_4_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_4_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_4_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: mh_4_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_0_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_0_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_0_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_0_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_0_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_1_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_1_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_1_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_1_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_1_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_2_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_2_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_2_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_2_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_2_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_3_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_3_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_3_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_3_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_3_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_4_0, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_4_1, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_4_2, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_4_3, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: ml_4_4, x: 0, y: 0, width: 4, height: 4, radius: 2, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+
+        # Points des jours
+        - obj: {id: dot_h0, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_h1, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_h2, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_h3, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_h4, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_h5, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0x10B981, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_l0, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_l1, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_l2, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_l3, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_l4, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+        - obj: {id: dot_l5, x: 0, y: 0, width: 10, height: 10, radius: 5, bg_color: 0xFBBF24, bg_opa: COVER, border_width: 0}
+
+        # Jours (texte clair)
+        - label: {id: lbl_d0, text: "--", text_font: r22, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 86, y: 172}
+        - label: {id: lbl_d1, text: "--", text_font: r22, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 204, y: 172}
+        - label: {id: lbl_d2, text: "--", text_font: r22, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 322, y: 172}
+        - label: {id: lbl_d3, text: "--", text_font: r22, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 440, y: 172}
+        - label: {id: lbl_d4, text: "--", text_font: r22, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 558, y: 172}
+        - label: {id: lbl_d5, text: "--", text_font: r22, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 676, y: 172}
+
+        # Icônes météo
+        - label: {id: lbl_i0, text: "${mdi_cloud}", text_font: mdi_40, text_color: 0xB0BEC5, width: 118, text_align: CENTER, x: 86, y: 200}
+        - label: {id: lbl_i1, text: "${mdi_cloud}", text_font: mdi_40, text_color: 0xB0BEC5, width: 118, text_align: CENTER, x: 204, y: 200}
+        - label: {id: lbl_i2, text: "${mdi_cloud}", text_font: mdi_40, text_color: 0xB0BEC5, width: 118, text_align: CENTER, x: 322, y: 200}
+        - label: {id: lbl_i3, text: "${mdi_cloud}", text_font: mdi_40, text_color: 0xB0BEC5, width: 118, text_align: CENTER, x: 440, y: 200}
+        - label: {id: lbl_i4, text: "${mdi_cloud}", text_font: mdi_40, text_color: 0xB0BEC5, width: 118, text_align: CENTER, x: 558, y: 200}
+        - label: {id: lbl_i5, text: "${mdi_cloud}", text_font: mdi_40, text_color: 0xB0BEC5, width: 118, text_align: CENTER, x: 676, y: 200}
+
+        # Températures max (au-dessus du point)
+        - label: {id: lbl_h0, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 86, y: 250}
+        - label: {id: lbl_h1, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 204, y: 250}
+        - label: {id: lbl_h2, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 322, y: 250}
+        - label: {id: lbl_h3, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 440, y: 250}
+        - label: {id: lbl_h4, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 558, y: 250}
+        - label: {id: lbl_h5, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 118, text_align: CENTER, x: 676, y: 250}
+
+        # Températures min (sous le point)
+        - label: {id: lbl_l0, text: "--", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 86, y: 340}
+        - label: {id: lbl_l1, text: "--", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 204, y: 340}
+        - label: {id: lbl_l2, text: "--", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 322, y: 340}
+        - label: {id: lbl_l3, text: "--", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 440, y: 340}
+        - label: {id: lbl_l4, text: "--", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 558, y: 340}
+        - label: {id: lbl_l5, text: "--", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 676, y: 340}
+
+        # Pluie (mm)
+        - label: {id: lbl_r0, text: " ", text_font: r16, text_color: 0x7DD3FC, width: 118, text_align: CENTER, x: 86, y: 368}
+        - label: {id: lbl_r1, text: " ", text_font: r16, text_color: 0x7DD3FC, width: 118, text_align: CENTER, x: 204, y: 368}
+        - label: {id: lbl_r2, text: " ", text_font: r16, text_color: 0x7DD3FC, width: 118, text_align: CENTER, x: 322, y: 368}
+        - label: {id: lbl_r3, text: " ", text_font: r16, text_color: 0x7DD3FC, width: 118, text_align: CENTER, x: 440, y: 368}
+        - label: {id: lbl_r4, text: " ", text_font: r16, text_color: 0x7DD3FC, width: 118, text_align: CENTER, x: 558, y: 368}
+        - label: {id: lbl_r5, text: " ", text_font: r16, text_color: 0x7DD3FC, width: 118, text_align: CENTER, x: 676, y: 368}
+
+        # Vent : cercle coloré (sans barres de défilement) + vitesse (km/h) + direction
+        - obj: {id: ring_0, x: 123, y: 396, width: 44, height: 44, radius: 22, bg_opa: TRANSP, border_width: 3, border_color: 0x10B981, pad_all: 0, scrollbar_mode: "OFF"}
+        - obj: {id: ring_1, x: 241, y: 396, width: 44, height: 44, radius: 22, bg_opa: TRANSP, border_width: 3, border_color: 0x10B981, pad_all: 0, scrollbar_mode: "OFF"}
+        - obj: {id: ring_2, x: 359, y: 396, width: 44, height: 44, radius: 22, bg_opa: TRANSP, border_width: 3, border_color: 0x10B981, pad_all: 0, scrollbar_mode: "OFF"}
+        - obj: {id: ring_3, x: 477, y: 396, width: 44, height: 44, radius: 22, bg_opa: TRANSP, border_width: 3, border_color: 0x10B981, pad_all: 0, scrollbar_mode: "OFF"}
+        - obj: {id: ring_4, x: 595, y: 396, width: 44, height: 44, radius: 22, bg_opa: TRANSP, border_width: 3, border_color: 0x10B981, pad_all: 0, scrollbar_mode: "OFF"}
+        - obj: {id: ring_5, x: 713, y: 396, width: 44, height: 44, radius: 22, bg_opa: TRANSP, border_width: 3, border_color: 0x10B981, pad_all: 0, scrollbar_mode: "OFF"}
+        - label: {id: lbl_w0, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 44, text_align: CENTER, x: 123, y: 409}
+        - label: {id: lbl_w1, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 44, text_align: CENTER, x: 241, y: 409}
+        - label: {id: lbl_w2, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 44, text_align: CENTER, x: 359, y: 409}
+        - label: {id: lbl_w3, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 44, text_align: CENTER, x: 477, y: 409}
+        - label: {id: lbl_w4, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 44, text_align: CENTER, x: 595, y: 409}
+        - label: {id: lbl_w5, text: "--", text_font: r16, text_color: 0xF1F5F9, width: 44, text_align: CENTER, x: 713, y: 409}
+        - label: {id: lbl_wd0, text: " ", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 86, y: 444}
+        - label: {id: lbl_wd1, text: " ", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 204, y: 444}
+        - label: {id: lbl_wd2, text: " ", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 322, y: 444}
+        - label: {id: lbl_wd3, text: " ", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 440, y: 444}
+        - label: {id: lbl_wd4, text: " ", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 558, y: 444}
+        - label: {id: lbl_wd5, text: " ", text_font: r16, text_color: 0xB6C2D6, width: 118, text_align: CENTER, x: 676, y: 444}
