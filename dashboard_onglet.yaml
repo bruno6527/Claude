@@ -267,9 +267,9 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: Prises et chauffage
+            heading: Chauffage et prises
             heading_style: title
-            icon: mdi:power-socket-eu
+            icon: mdi:radiator
           - type: tile
             entity: switch.tasmota_3
             name: Chauffage SDB
@@ -288,17 +288,26 @@ views:
                 %}--tile-color:#f97316;animation:g 2.6s ease-in-out infinite{%
                 endif %}}
           - type: tile
-            entity: switch.tasmota_2
-            name: Prise sono
-            icon: mdi:speaker
+            entity: switch.relay_switch_1x2_5kw
+            name: Sèche-serviette
+            icon: mdi:heating-coil
             features:
               - type: toggle
             card_mod:
-              style: *glass
+              style: &glow_seche >
+                @keyframes g{0%,100%{box-shadow:0 0 8px
+                rgba(244,63,94,.35)}50%{box-shadow:0 0 24px
+                rgba(244,63,94,.75)}}
+
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-radius:22px;{% if
+                is_state('switch.relay_switch_1x2_5kw','on')
+                %}--tile-color:#f43f5e;animation:g 2.6s ease-in-out infinite{%
+                endif %}}
           - type: tile
-            entity: switch.relay_switch_1x2_5kw
-            name: Relais Z-Wave
-            icon: mdi:electric-switch
+            entity: switch.tasmota_2
+            name: Prise sono
+            icon: mdi:speaker
             features:
               - type: toggle
             card_mod:
@@ -668,6 +677,14 @@ views:
               - type: toggle
             card_mod:
               style: *glow_chauffage
+          - type: tile
+            entity: switch.relay_switch_1x2_5kw
+            name: Sèche-serviette
+            icon: mdi:heating-coil
+            features:
+              - type: toggle
+            card_mod:
+              style: *glow_seche
 
       - type: grid
         cards:
@@ -1127,19 +1144,11 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: Télévision et relais
+            heading: Télévision
             heading_style: title
             icon: mdi:television
           - type: media-control
             entity: media_player.connect_tv_de_sfr
-            card_mod:
-              style: *glass
-          - type: tile
-            entity: switch.relay_switch_1x2_5kw
-            name: Relais Z-Wave
-            icon: mdi:electric-switch
-            features:
-              - type: toggle
             card_mod:
               style: *glass
 
@@ -1621,7 +1630,7 @@ views:
               style: *glass
           - type: tile
             entity: sensor.node_5_node_status
-            name: Relais
+            name: Sèche-serviette
             card_mod:
               style: *glass
           - type: tile
