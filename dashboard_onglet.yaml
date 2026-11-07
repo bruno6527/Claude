@@ -24,17 +24,53 @@ views:
                 entity: sensor.living_room_temperature_salon_air_temperature
                 show_state: true
                 show_icon: true
-          - type: weather-forecast
+          # Carte HACS « Weather Forecast Card » (troinine)
+          - &meteo
+            type: custom:weather-forecast-card
             entity: weather.forecast_home
-            forecast_type: daily
-            show_current: true
-            show_forecast: true
+            name: Météo
+            default_forecast: hourly
+            # Les 7 effets animés proposés par la carte (fog n'en fait pas partie,
+            # il est ajouté plus bas via card_mod)
+            show_condition_effects:
+              - sun
+              - moon
+              - sky
+              - cloud
+              - rain
+              - snow
+              - lightning
+            current:
+              show_attributes:
+                - visibility
+                - apparent_temperature
+              temperature_precision: 1
+            forecast:
+              mode: chart
+              extra_attribute: wind_bearing
+              show_sun_times: true
+              hourly_group_size: 2
+              hourly_slots: 9
+              temperature_precision: 1
+              show_attribute_selector: true
             grid_options:
               columns: 12
             card_mod:
-              style: &glass >-
-                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
-                solid var(--divider-color);border-radius:22px}
+              # Effet brouillard : nappes de brume animées quand la météo est « fog »
+              style: >
+                ha-card{border:1px solid var(--divider-color);border-radius:22px;overflow:hidden;position:relative}
+
+                {% if is_state('weather.forecast_home', 'fog') %}
+                @keyframes brume{0%{transform:translateX(-25%)}100%{transform:translateX(25%)}}
+
+                @keyframes brume2{0%{transform:translateX(20%)}100%{transform:translateX(-20%)}}
+
+                ha-card::before,ha-card::after{content:'';position:absolute;inset:-10% -40%;pointer-events:none;z-index:2;filter:blur(10px)}
+
+                ha-card::before{background:radial-gradient(ellipse 35% 14% at 30% 30%,rgba(210,218,230,.28),transparent 70%),radial-gradient(ellipse 40% 16% at 75% 60%,rgba(210,218,230,.22),transparent 70%);animation:brume 22s ease-in-out infinite alternate}
+
+                ha-card::after{background:radial-gradient(ellipse 45% 12% at 55% 45%,rgba(210,218,230,.20),transparent 70%),radial-gradient(ellipse 50% 14% at 20% 80%,rgba(210,218,230,.18),transparent 70%);animation:brume2 30s ease-in-out infinite alternate}
+                {% endif %}
           - type: button
             entity: input_boolean.mode_alarme
             name: Alarme
@@ -148,7 +184,9 @@ views:
             features:
               - type: light-brightness
             card_mod:
-              style: *glass
+              style: &glass >-
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-radius:22px}
           - type: tile
             entity: light.buffet_groupe
             name: Buffet
@@ -669,15 +707,7 @@ views:
             heading: Prévisions
             heading_style: title
             icon: mdi:weather-cloudy-clock
-          - type: weather-forecast
-            entity: weather.forecast_home
-            forecast_type: daily
-            show_current: true
-            show_forecast: true
-            grid_options:
-              columns: 12
-            card_mod:
-              style: *glass
+          - *meteo
 
       - type: grid
         column_span: 4
