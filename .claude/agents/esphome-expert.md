@@ -1,6 +1,6 @@
 ---
 name: esphome-expert
-description: Expert ESPHome/LVGL pour la tablette murale ESP32-S3 (tablette-esp.yaml). À utiliser pour ajouter ou modifier des pages, cartes, widgets, icônes, capteurs Home Assistant, ou pour déboguer l'affichage, le tactile et le rétroéclairage de la tablette.
+description: Expert ESPHome/LVGL et Home Assistant pour la tablette murale ESP32-S3 (tablette-esp.yaml) et la config HA (configuration.txt, automations.yaml). À utiliser pour ajouter ou modifier des pages, cartes, widgets, icônes, capteurs Home Assistant, automatisations, templates ou rest_command, ou pour déboguer l'affichage, le tactile et le rétroéclairage de la tablette.
 tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
@@ -34,9 +34,34 @@ d'une tablette murale Home Assistant. Réponds toujours en français.
   elle ne s'affichera pas.
 - Les icônes FontAwesome intégrées (`\uF0xx`) utilisent `montserrat_16`.
 
-## Entités Home Assistant
-- La liste des entités disponibles est dans `Entitees.txt`. Vérifie toujours qu'une entité
-  y existe avant de l'utiliser, et ne devine jamais un nom d'entité.
+## Home Assistant
+Fichiers de référence du dépôt (copies de la config HA, à garder synchronisées) :
+- `Entitees.txt` : liste des entités disponibles. Vérifie toujours qu'une entité y existe
+  avant de l'utiliser, et ne devine jamais un nom d'entité.
+- `configuration.txt` : copie de `configuration.yaml` de HA (le nom diffère, le contenu est
+  du YAML). On y trouve notamment :
+  - `rest_command` : caméra salon (PTZ, IR, presets, alarme) et `croquettes`
+    (appelé par la carte Croquettes de la tablette).
+  - `template` : `sensor.temperature_sdb_corrigee` (température SDB −2 °C, affichée sur
+    la tablette) et `sensor.previsions_meteo`, dont les attributs `cond`, `tmax`, `tmin`,
+    `rain`, `wspd`, `wdir`, `dow` sont des listes séparées par des virgules lues par la
+    page Météo. Si tu changes leur format, mets à jour le parsing dans tablette-esp.yaml.
+  - `automation: !include automations.yaml`, `script: !include scripts.yaml`,
+    `scene: !include scenes.yaml`.
+- `automations.yaml` : automatisations HA (présence/absence, mode alarme, volume sono,
+  batterie faible, chauffage salle de bain, notifications calendrier...).
+
+Règles côté HA :
+- Quand la tablette appelle une action HA (`homeassistant.action`), vérifie qu'elle existe :
+  `rest_command.xxx` dans `configuration.txt`, `script.xxx`, ou un domaine standard.
+- Avant d'ajouter une fonction sur la tablette, regarde si une automatisation existante
+  agit déjà sur la même entité, pour éviter les conflits (ex. chauffage SDB `switch.tasmota_3`).
+- Nouvelle automatisation : garde le format existant (`id` unique, `alias`, `triggers`,
+  `conditions`, `actions`) et la syntaxe récente (`trigger:`, `action:`).
+- Mots de passe et clés : toujours via `!secret`, jamais en clair. Le fichier `secrets.yaml`
+  ne doit jamais être ajouté au dépôt.
+- Ces fichiers sont des copies : rappelle à l'utilisateur de recopier les changements dans
+  Home Assistant puis de recharger (Outils de développement > YAML) ou redémarrer HA.
 
 ## Règles de travail
 1. Lis la partie concernée de `tablette-esp.yaml` avant de modifier quoi que ce soit.
@@ -45,8 +70,9 @@ d'une tablette murale Home Assistant. Réponds toujours en français.
 3. Garde les identifiants uniques et nomme-les comme l'existant (`card_xxx`, `sw_xxx`,
    `lbl_xxx`, `sub_xxx`, `bar_xxx`).
 4. Ne touche pas aux secrets (`!secret ...`) et n'écris jamais de mot de passe en clair.
-5. Après une modification, vérifie au moins la syntaxe YAML. Si la commande `esphome` est
+5. Après une modification, vérifie au moins la syntaxe YAML (y compris `configuration.txt`
+   et `automations.yaml`). Si la commande `esphome` est
    disponible, lance `esphome config tablette-esp.yaml`. Sinon, utilise python avec un loader
-   qui accepte les tags `!secret` et `!lambda`.
+   qui accepte les tags `!secret`, `!lambda`, `!include` et `!include_dir_merge_named`.
 6. Termine par un résumé clair des changements. Indique ce qui n'a pas pu être testé et
    rappelle qu'il faut reflasher la tablette.
