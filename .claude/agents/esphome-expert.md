@@ -97,3 +97,8 @@ propose de les traiter. Retire un point de cette liste une fois traité ou refus
   (`dm_plafond` / `sw_plafond` / `sl_plafond` et `dm_matrice` / `sw_matrice` / `sl_matrice`),
   les cartes restent affichées : les masquer (`lvgl.widget.hide`) quand l'entité est
   indisponible, et réorganiser les cartes restantes.
+- **Renommer « Relais Z-Wave » en « Sèche-serviette »** : `switch.relay_switch_1x2_5kw`
+  alimente le sèche-serviette de la salle de bain. Sur la tablette (page Maison,
+  `card_relais_zw` / `sw_relais_zw`), renommer le libellé, mettre l'icône
+  `mdi:heating-coil` (`\U000F1AAF`, à ajouter dans `substitutions` et `&mdi_glyphs`) et
+  déplacer la carte à côté du chauffage SDB (`card_chauffage`), comme sur le dashboard HA.
