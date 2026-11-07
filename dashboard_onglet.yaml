@@ -8,10 +8,6 @@ views:
     icon: mdi:home
     type: sections
     max_columns: 4
-    background: &bg >-
-      radial-gradient(1100px 600px at 0% -10%,rgba(6,182,212,.10),transparent 60%),
-      radial-gradient(900px 520px at 110% 0%,rgba(139,92,246,.10),transparent 60%),
-      linear-gradient(160deg,#050b18 0%,#08142d 55%,#0b1a33 100%) fixed
     sections:
       - type: grid
         cards:
@@ -37,8 +33,8 @@ views:
               columns: 12
             card_mod:
               style: &glass >-
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-radius:22px}
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-radius:22px}
           - type: button
             entity: input_boolean.mode_alarme
             name: Alarme
@@ -58,8 +54,8 @@ views:
                 solid
                 rgba(255,255,255,.35);color:#fff;--paper-item-icon-color:#fff;animation:p
                 2s ease-in-out infinite{% else
-                %}background:rgba(13,23,42,.72);border:1px solid
-                rgba(148,163,184,.16);--paper-item-icon-color:#81c784{% endif
+                %}background:var(--card-background-color);border:1px solid
+                var(--divider-color);--paper-item-icon-color:#81c784{% endif
                 %}}
           - type: button
             name: Croquettes
@@ -94,8 +90,8 @@ views:
                 %}{% set c = '#4fc3f7' if t < 18 else ('#66bb6a' if t < 24 else
                 '#ff7043') %}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }}}
           - type: tile
             entity: sensor.bedroom_sensor_chambre_air_temperature
@@ -107,8 +103,8 @@ views:
                 %}{% set c = '#4fc3f7' if t < 17 else ('#66bb6a' if t < 23 else
                 '#ff7043') %}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }}}
           - type: tile
             entity: sensor.temperature_sdb_corrigee
@@ -120,8 +116,8 @@ views:
                 %}{% set c = '#4fc3f7' if t < 18 else ('#66bb6a' if t < 24 else
                 '#ff7043') %}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }}}
           - type: tile
             entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature
@@ -133,8 +129,8 @@ views:
                 | float(15) %}{% set c = '#4fc3f7' if t < 10 else ('#66bb6a' if
                 t < 25 else '#ff7043') %}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }}}
 
       - type: grid
@@ -203,8 +199,8 @@ views:
                 rgba(255,179,0,.35)}50%{box-shadow:0 0 24px
                 rgba(255,179,0,.75)}}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-radius:22px;{% if
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-radius:22px;{% if
                 is_state('switch.tasmota','on')
                 %}--tile-color:#ffb300;animation:g 2.6s ease-in-out infinite{%
                 endif %}}
@@ -248,8 +244,8 @@ views:
                 rgba(249,115,22,.35)}50%{box-shadow:0 0 24px
                 rgba(249,115,22,.75)}}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-radius:22px;{% if
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-radius:22px;{% if
                 is_state('switch.tasmota_3','on')
                 %}--tile-color:#f97316;animation:g 2.6s ease-in-out infinite{%
                 endif %}}
@@ -297,8 +293,8 @@ views:
               - type: bar-gauge
             card_mod:
               style: &glass_cyan >-
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid
                 #06b6d4;border-radius:22px;--tile-color:#06b6d4}
           - type: tile
             entity: sensor.bureau_snapmaker_u1_print_time_left
@@ -326,8 +322,8 @@ views:
                 %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v < 50 else
                 '#66bb6a') %}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
                 %}animation:b 1.4s infinite{% endif %}}
           - type: tile
@@ -343,8 +339,8 @@ views:
                 float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
                 < 50 else '#66bb6a') %}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
                 %}animation:b 1.4s infinite{% endif %}}
           - type: tile
@@ -360,8 +356,8 @@ views:
                 float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
                 < 50 else '#66bb6a') %}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
                 %}animation:b 1.4s infinite{% endif %}}
           - type: tile
@@ -377,8 +373,8 @@ views:
                 float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
                 < 50 else '#66bb6a') %}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
                 %}animation:b 1.4s infinite{% endif %}}
           - type: tile
@@ -394,8 +390,8 @@ views:
                 float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
                 < 50 else '#66bb6a') %}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
                 %}animation:b 1.4s infinite{% endif %}}
 
@@ -407,7 +403,6 @@ views:
     icon: mdi:lightbulb-group
     type: sections
     max_columns: 3
-    background: *bg
     sections:
       - type: grid
         cards:
@@ -427,8 +422,8 @@ views:
                 collapsible_controls: true
                 card_mod:
                   style: &glass_top >-
-                    ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                    solid rgba(148,163,184,.16);border-radius:22px 22px 0 0}
+                    ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                    solid var(--divider-color);border-radius:22px 22px 0 0}
               - type: custom:mushroom-select-card
                 entity: select.living_room_cadre_wled_preset
                 name: Preset cadre
@@ -436,8 +431,8 @@ views:
                 icon_type: icon
                 card_mod:
                   style: &glass_bottom >-
-                    ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                    solid rgba(148,163,184,.16);border-radius:0 0 22px 22px}
+                    ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                    solid var(--divider-color);border-radius:0 0 22px 22px}
           - type: custom:mushroom-light-card
             entity: light.buffet_groupe
             name: Buffet
@@ -568,7 +563,6 @@ views:
     icon: mdi:thermometer
     type: sections
     max_columns: 4
-    background: *bg
     sections:
       - type: grid
         cards:
@@ -587,8 +581,8 @@ views:
             icon: mdi:brightness-6
             card_mod:
               style: &glass_yellow >-
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid
                 #ffd54f;border-radius:22px;--tile-color:#ffd54f}
 
       - type: grid
@@ -625,8 +619,8 @@ views:
             name: Humidité
             card_mod:
               style: &glass_blue >-
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid
                 #42a5f5;border-radius:22px;--tile-color:#42a5f5}
           - type: tile
             entity: switch.tasmota_3
@@ -664,8 +658,8 @@ views:
             name: Pression
             card_mod:
               style: &glass_purple >-
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid
                 #9575cd;border-radius:22px;--tile-color:#9575cd}
 
       - type: grid
@@ -745,7 +739,6 @@ views:
     icon: mdi:shield-home
     type: sections
     max_columns: 3
-    background: *bg
     sections:
       - type: grid
         cards:
@@ -769,8 +762,8 @@ views:
               - type: toggle
             card_mod:
               style: >
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-radius:22px;{% if
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-radius:22px;{% if
                 is_state('input_boolean.mode_alarme_auto','on')
                 %}--tile-color:#ef5350;border-left:5px solid #ef5350{% endif %}}
           - type: tile
@@ -796,8 +789,8 @@ views:
             name: Mouvement salon
             card_mod:
               style: &motion >-
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-radius:22px;--tile-color:#ef5350}
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-radius:22px;--tile-color:#ef5350}
           - type: tile
             entity: binary_sensor.bedroom_sensor_chambre_motion_detection
             name: Mouvement chambre
@@ -833,7 +826,7 @@ views:
             card_mod:
               style: >-
                 ha-card{border:1px solid
-                rgba(148,163,184,.16);border-radius:22px;overflow:hidden}
+                var(--divider-color);border-radius:22px;overflow:hidden}
 
   # =====================================================================
   # CAMÉRA
@@ -843,7 +836,6 @@ views:
     icon: mdi:cctv
     type: sections
     max_columns: 2
-    background: *bg
     sections:
       - type: grid
         cards:
@@ -862,7 +854,7 @@ views:
                 card_mod:
                   style: >-
                     ha-card{border:1px solid
-                    rgba(148,163,184,.16);border-radius:22px 22px 0
+                    var(--divider-color);border-radius:22px 22px 0
                     0;overflow:hidden}
               - type: grid
                 columns: 5
@@ -876,9 +868,9 @@ views:
                       perform_action: rest_command.cam_salon_gauche
                     card_mod:
                       style: &ptz >-
-                        ha-card{background:rgba(13,23,42,.72);border:1px
+                        ha-card{background:var(--card-background-color);border:1px
                         solid
-                        rgba(148,163,184,.16);border-radius:16px;--paper-item-icon-color:#80d8ff}
+                        var(--divider-color);border-radius:16px;--paper-item-icon-color:#80d8ff}
                   - type: button
                     icon: mdi:arrow-up-bold
                     show_name: false
@@ -927,8 +919,8 @@ views:
                         number: 0
                     card_mod:
                       style: &preset >-
-                        ha-card{background:rgba(13,23,42,.72);border:1px
-                        solid rgba(148,163,184,.16);border-radius:16px}
+                        ha-card{background:var(--card-background-color);border:1px
+                        solid var(--divider-color);border-radius:16px}
                   - type: button
                     icon: mdi:numeric-2-box
                     name: Preset 2
@@ -970,8 +962,8 @@ views:
                     mode: open
                 card_mod:
                   style: >-
-                    ha-card{background:rgba(13,23,42,.72);border:1px solid
-                    rgba(148,163,184,.16);border-radius:16px;--paper-item-icon-color:#ffd54f}
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#ffd54f}
               - type: button
                 icon: mdi:led-off
                 name: IR off
@@ -982,8 +974,8 @@ views:
                     mode: close
                 card_mod:
                   style: >-
-                    ha-card{background:rgba(13,23,42,.72);border:1px solid
-                    rgba(148,163,184,.16);border-radius:16px;--paper-item-icon-color:#b0bec5}
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#b0bec5}
               - type: button
                 icon: mdi:brightness-auto
                 name: IR auto
@@ -994,8 +986,8 @@ views:
                     mode: auto
                 card_mod:
                   style: >-
-                    ha-card{background:rgba(13,23,42,.72);border:1px solid
-                    rgba(148,163,184,.16);border-radius:16px;--paper-item-icon-color:#4fc3f7}
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#4fc3f7}
           - type: grid
             columns: 2
             square: false
@@ -1029,7 +1021,6 @@ views:
     icon: mdi:cat
     type: sections
     max_columns: 3
-    background: *bg
     sections:
       - type: grid
         cards:
@@ -1130,7 +1121,6 @@ views:
     icon: mdi:printer-3d
     type: sections
     max_columns: 3
-    background: *bg
     sections:
       - type: grid
         cards:
@@ -1152,7 +1142,7 @@ views:
             card_mod:
               style: >-
                 ha-card{border:1px solid
-                rgba(148,163,184,.16);border-radius:22px;overflow:hidden}
+                var(--divider-color);border-radius:22px;overflow:hidden}
           - type: tile
             entity: light.bureau_snapmaker_u1_led_cavity_led
             name: Éclairage caisson
@@ -1275,8 +1265,8 @@ views:
             icon: mdi:printer-3d-nozzle-heat
             card_mod:
               style: &glass_orange >-
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid
                 #ff7043;border-radius:22px;--tile-color:#ff7043}
           - type: tile
             entity: sensor.bureau_snapmaker_u1_extruder1_temperature
@@ -1333,7 +1323,6 @@ views:
     icon: mdi:cellphone
     type: sections
     max_columns: 2
-    background: *bg
     sections:
       - type: grid
         cards:
@@ -1380,8 +1369,8 @@ views:
             name: Pas du jour
             card_mod:
               style: &glass_teal >-
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid
                 #26a69a;border-radius:22px;--tile-color:#26a69a}
           - type: tile
             entity: sensor.sm_a528b_steps_sensor
@@ -1419,7 +1408,7 @@ views:
             card_mod:
               style: >-
                 ha-card{border:1px solid
-                rgba(148,163,184,.16);border-radius:22px;overflow:hidden}
+                var(--divider-color);border-radius:22px;overflow:hidden}
 
   # =====================================================================
   # AGENDA
@@ -1429,7 +1418,6 @@ views:
     icon: mdi:calendar
     type: sections
     max_columns: 1
-    background: *bg
     sections:
       - type: grid
         cards:
@@ -1455,7 +1443,6 @@ views:
     icon: mdi:server
     type: sections
     max_columns: 3
-    background: *bg
     sections:
       - type: grid
         cards:
@@ -1473,8 +1460,8 @@ views:
 
                 @keyframes m{50%{box-shadow:0 0 22px rgba(239,83,80,.6)}}
 
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                ha-card{background:var(--card-background-color);backdrop-filter:blur(14px);border:1px
+                solid var(--divider-color);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }};{% if n > 0
                 %}animation:m 2s ease-in-out infinite{% endif %}}
           - type: tile
