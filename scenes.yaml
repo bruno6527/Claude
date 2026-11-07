@@ -1,0 +1,224 @@
+# Ambiances d'éclairage du salon
+# Luminosité : 0 à 255 (5 % = 13, 10 % = 26, 15 % = 38, 30 % = 77, 40 % = 102,
+# 50 % = 128, 60 % = 153, 70 % = 179, 80 % = 204, 90 % = 230, 100 % = 255)
+# Couleurs : ambre [255,147,41], orange [255,110,20], rouge-orange [255,60,10],
+# blanc chaud [255,180,107] (~2700 K), blanc neutre [255,228,206] (~4000 K)
+# « effect: Solid » remet les WLED en couleur fixe après le mode Fête.
+# Plafond et Matrice sont ignorés quand l'interrupteur mural est coupé.
+
+- id: scene_cinema
+  name: Cinéma
+  icon: mdi:movie-open
+  entities:
+    light.living_room_cadre_wled:
+      state: "on"
+      effect: Solid
+      brightness: 26
+      rgb_color: [255, 147, 41]
+    light.buffet_groupe:
+      state: "on"
+      brightness: 38
+      rgb_color: [255, 147, 41]
+    light.wled_2:
+      state: "off"
+    light.wled_3:
+      state: "off"
+    light.living_room_cube_wled_main:
+      state: "on"
+      effect: Solid
+      brightness: 26
+      rgb_color: [255, 110, 20]
+    switch.tasmota:
+      state: "off"
+
+- id: scene_eclairage_blanc
+  name: Éclairage blanc
+  icon: mdi:lightbulb-on
+  entities:
+    light.living_room_cadre_wled:
+      state: "on"
+      effect: Solid
+      brightness: 255
+      rgb_color: [255, 228, 206]
+    light.buffet_groupe:
+      state: "on"
+      brightness: 255
+      rgb_color: [255, 228, 206]
+    light.wled_2:
+      state: "on"
+      effect: Solid
+      brightness: 255
+      rgb_color: [255, 255, 255]
+    light.wled_3:
+      state: "on"
+      effect: Solid
+      brightness: 255
+      rgb_color: [255, 255, 255]
+    light.living_room_cube_wled_main:
+      state: "on"
+      effect: Solid
+      brightness: 204
+      rgb_color: [255, 255, 255]
+    switch.tasmota:
+      state: "on"
+
+- id: scene_detente
+  name: Détente
+  icon: mdi:sofa
+  entities:
+    light.living_room_cadre_wled:
+      state: "on"
+      effect: Solid
+      brightness: 102
+      rgb_color: [255, 180, 107]
+    light.buffet_groupe:
+      state: "on"
+      brightness: 128
+      rgb_color: [255, 180, 107]
+    light.wled_2:
+      state: "off"
+    light.wled_3:
+      state: "off"
+    light.living_room_cube_wled_main:
+      state: "on"
+      effect: Solid
+      brightness: 77
+      rgb_color: [255, 147, 41]
+    switch.tasmota:
+      state: "on"
+
+- id: scene_repas
+  name: Repas
+  icon: mdi:silverware-fork-knife
+  entities:
+    light.living_room_cadre_wled:
+      state: "on"
+      effect: Solid
+      brightness: 77
+      rgb_color: [255, 180, 107]
+    light.buffet_groupe:
+      state: "on"
+      brightness: 230
+      rgb_color: [255, 180, 107]
+    light.wled_2:
+      state: "on"
+      effect: Solid
+      brightness: 153
+      rgb_color: [255, 180, 107]
+    light.wled_3:
+      state: "off"
+    light.living_room_cube_wled_main:
+      state: "off"
+    switch.tasmota:
+      state: "off"
+
+- id: scene_lecture
+  name: Lecture
+  icon: mdi:book-open-variant
+  entities:
+    light.living_room_cadre_wled:
+      state: "off"
+    light.buffet_groupe:
+      state: "on"
+      brightness: 153
+      rgb_color: [255, 228, 206]
+    light.wled_2:
+      state: "on"
+      effect: Solid
+      brightness: 179
+      rgb_color: [255, 228, 206]
+    light.wled_3:
+      state: "off"
+    light.living_room_cube_wled_main:
+      state: "off"
+    switch.tasmota:
+      state: "on"
+
+- id: scene_veilleuse
+  name: Veilleuse
+  icon: mdi:weather-night
+  entities:
+    light.living_room_cadre_wled:
+      state: "off"
+    light.buffet_groupe:
+      state: "on"
+      brightness: 13
+      rgb_color: [255, 110, 20]
+    light.wled_2:
+      state: "off"
+    light.wled_3:
+      state: "off"
+    light.living_room_cube_wled_main:
+      state: "on"
+      effect: Solid
+      brightness: 13
+      rgb_color: [255, 60, 10]
+    switch.tasmota:
+      state: "off"
+
+- id: scene_fete
+  name: Fête
+  icon: mdi:party-popper
+  entities:
+    light.living_room_cadre_wled:
+      state: "on"
+      brightness: 200
+      effect: Rainbow
+    light.buffet_groupe:
+      state: "on"
+      brightness: 200
+      rgb_color: [190, 40, 255]
+    light.wled_2:
+      state: "off"
+    light.wled_3:
+      state: "on"
+      brightness: 200
+      effect: Colorloop
+    light.living_room_cube_wled_main:
+      state: "on"
+      brightness: 200
+      effect: Pride 2015
+    switch.tasmota:
+      state: "on"
+
+- id: scene_reveil
+  name: Réveil
+  icon: mdi:weather-sunset-up
+  entities:
+    light.living_room_cadre_wled:
+      state: "on"
+      effect: Solid
+      brightness: 128
+      rgb_color: [255, 180, 107]
+    light.buffet_groupe:
+      state: "on"
+      brightness: 153
+      rgb_color: [255, 180, 107]
+    light.wled_2:
+      state: "on"
+      effect: Solid
+      brightness: 128
+      rgb_color: [255, 180, 107]
+    light.wled_3:
+      state: "off"
+    light.living_room_cube_wled_main:
+      state: "off"
+    switch.tasmota:
+      state: "off"
+
+- id: scene_tout_eteindre
+  name: Tout éteindre
+  icon: mdi:lightbulb-group-off
+  entities:
+    light.living_room_cadre_wled:
+      state: "off"
+    light.buffet_groupe:
+      state: "off"
+    light.wled_2:
+      state: "off"
+    light.wled_3:
+      state: "off"
+    light.living_room_cube_wled_main:
+      state: "off"
+    switch.tasmota:
+      state: "off"

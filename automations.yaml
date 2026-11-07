@@ -272,3 +272,84 @@
           data:
             tag: capteurs_muets
   mode: queued
+- id: '1794000000002'
+  alias: Veilleuse automatique salon
+  description: La nuit (23h - 6h30), allume la scène Veilleuse quand une présence est
+    détectée au salon ou devant la tablette, si tout est éteint. L'éteint après 3 min
+    sans présence, sauf si quelqu'un a changé l'éclairage entre-temps.
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.living_room_temperature_salon_motion_detection
+    - binary_sensor.living_room_tablette_esp_mouvement
+    to: 'on'
+  conditions:
+  - condition: time
+    after: '23:00:00'
+    before: '06:30:00'
+  - condition: template
+    value_template: >-
+      {{ ['light.living_room_cadre_wled', 'light.buffet_groupe', 'light.wled_2',
+          'light.wled_3', 'light.living_room_cube_wled_main', 'switch.tasmota']
+         | select('is_state', 'on') | list | count == 0 }}
+  actions:
+  - action: scene.turn_on
+    target:
+      entity_id: scene.veilleuse
+    data:
+      transition: 2
+  - wait_for_trigger:
+    - trigger: template
+      value_template: >-
+        {{ is_state('binary_sensor.living_room_temperature_salon_motion_detection', 'off')
+           and is_state('binary_sensor.living_room_tablette_esp_mouvement', 'off') }}
+      for:
+        minutes: 3
+    timeout:
+      hours: 1
+    continue_on_timeout: true
+  # On n'éteint que si l'éclairage est toujours celui de la veilleuse
+  - condition: template
+    value_template: >-
+      {{ is_state('light.living_room_cadre_wled', 'off')
+         and is_state('light.wled_2', 'off') and is_state('light.wled_3', 'off')
+         and is_state('switch.tasmota', 'off')
+         and (state_attr('light.living_room_cube_wled_main', 'brightness') | int(0)) <= 20
+         and (state_attr('light.buffet_groupe', 'brightness') | int(0)) <= 20 }}
+  - action: light.turn_off
+    target:
+      entity_id:
+      - light.buffet_groupe
+      - light.living_room_cube_wled_main
+    data:
+      transition: 5
+  mode: single
+  max_exceeded: silent
+- id: '1794000000003'
+  alias: Réveil en semaine
+  description: Du lundi au vendredi à 7h, si Bruno est à la maison et qu'il fait encore
+    sombre, allume progressivement la scène Réveil.
+  triggers:
+  - trigger: time
+    at: 07:00:00
+  conditions:
+  - condition: time
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+  - condition: state
+    entity_id: person.bruno
+    state: home
+  - condition: sun
+    before: sunrise
+    before_offset: 00:30:00
+  actions:
+  - action: scene.turn_on
+    target:
+      entity_id: scene.reveil
+    data:
+      transition: 60
+  mode: single
