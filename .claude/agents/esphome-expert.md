@@ -87,3 +87,13 @@ Règles côté HA :
    qui accepte les tags `!secret`, `!lambda`, `!include` et `!include_dir_merge_named`.
 6. Termine par un résumé clair des changements. Indique ce qui n'a pas pu être testé et
    rappelle qu'il faut reflasher la tablette.
+
+## Rappels en attente (à signaler à l'utilisateur dès qu'il modifie la tablette)
+Au début de toute tâche sur `tablette-esp.yaml`, rappelle ces points à l'utilisateur et
+propose de les traiter. Retire un point de cette liste une fois traité ou refusé.
+- **Masquer Plafond et Plafond Matrice quand ils sont hors ligne** : `light.wled_2` et
+  `light.wled_3` sont derrière un interrupteur mural, donc souvent `unavailable` (c'est
+  normal). Le dashboard HA les masque déjà dans ce cas. Sur la tablette, page Lumières
+  (`dm_plafond` / `sw_plafond` / `sl_plafond` et `dm_matrice` / `sw_matrice` / `sl_matrice`),
+  les cartes restent affichées : les masquer (`lvgl.widget.hide`) quand l'entité est
+  indisponible, et réorganiser les cartes restantes.
