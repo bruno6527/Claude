@@ -190,12 +190,30 @@ views:
               - type: light-brightness
             card_mod:
               style: *glass
+          # Lampe branchée sur la prise Tasmota
+          - type: tile
+            entity: switch.tasmota
+            name: Lampe
+            icon: mdi:lamp
+            features:
+              - type: toggle
+            card_mod:
+              style: &glow_tasmota >
+                @keyframes g{0%,100%{box-shadow:0 0 8px
+                rgba(255,179,0,.35)}50%{box-shadow:0 0 24px
+                rgba(255,179,0,.75)}}
+
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-radius:22px;{% if
+                is_state('switch.tasmota','on')
+                %}--tile-color:#ffb300;animation:g 2.6s ease-in-out infinite{%
+                endif %}}
           - type: button
             name: Tout éteindre
             icon: mdi:lightbulb-group-off
             tap_action:
               action: perform-action
-              perform_action: light.turn_off
+              perform_action: homeassistant.turn_off
               target:
                 entity_id:
                   - light.living_room_cadre_wled
@@ -203,6 +221,7 @@ views:
                   - light.wled_2
                   - light.wled_3
                   - light.living_room_cube_wled_main
+                  - switch.tasmota
             grid_options:
               columns: 12
               rows: 1
@@ -233,23 +252,6 @@ views:
                 solid rgba(148,163,184,.16);border-radius:22px;{% if
                 is_state('switch.tasmota_3','on')
                 %}--tile-color:#f97316;animation:g 2.6s ease-in-out infinite{%
-                endif %}}
-          - type: tile
-            entity: switch.tasmota
-            name: Prise Tasmota
-            icon: mdi:lamp
-            features:
-              - type: toggle
-            card_mod:
-              style: &glow_tasmota >
-                @keyframes g{0%,100%{box-shadow:0 0 8px
-                rgba(255,179,0,.35)}50%{box-shadow:0 0 24px
-                rgba(255,179,0,.75)}}
-
-                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
-                solid rgba(148,163,184,.16);border-radius:22px;{% if
-                is_state('switch.tasmota','on')
-                %}--tile-color:#ffb300;animation:g 2.6s ease-in-out infinite{%
                 endif %}}
           - type: tile
             entity: switch.tasmota_2
@@ -446,6 +448,15 @@ views:
             collapsible_controls: true
             card_mod:
               style: *glass
+          # Lampe branchée sur la prise Tasmota
+          - type: tile
+            entity: switch.tasmota
+            name: Lampe
+            icon: mdi:lamp
+            features:
+              - type: toggle
+            card_mod:
+              style: *glow_tasmota
 
       # Masquée quand les deux WLED du plafond sont hors ligne (interrupteur coupé)
       - type: grid
@@ -534,7 +545,7 @@ views:
             icon: mdi:lightbulb-group-off
             tap_action:
               action: perform-action
-              perform_action: light.turn_off
+              perform_action: homeassistant.turn_off
               target:
                 entity_id:
                   - light.living_room_cadre_wled
@@ -542,6 +553,7 @@ views:
                   - light.wled_2
                   - light.wled_3
                   - light.living_room_cube_wled_main
+                  - switch.tasmota
             grid_options:
               columns: 12
               rows: 1
@@ -1094,7 +1106,7 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: Télévision et prises
+            heading: Télévision et relais
             heading_style: title
             icon: mdi:television
           - type: media-control
@@ -1109,14 +1121,6 @@ views:
               - type: toggle
             card_mod:
               style: *glass
-          - type: tile
-            entity: switch.tasmota
-            name: Prise Tasmota
-            icon: mdi:lamp
-            features:
-              - type: toggle
-            card_mod:
-              style: *glow_tasmota
 
   # =====================================================================
   # BUREAU : imprimante 3D Snapmaker U1
