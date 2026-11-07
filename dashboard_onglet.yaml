@@ -1435,6 +1435,65 @@ views:
       - type: grid
         cards:
           - type: heading
+            heading: Surveillance des capteurs
+            heading_style: title
+            icon: mdi:access-point-network
+          - type: tile
+            entity: sensor.capteurs_muets
+            name: Capteurs muets
+            card_mod:
+              style: >
+                {% set n = states('sensor.capteurs_muets') | int(0) %}{% set c =
+                '#ef5350' if n > 0 else '#66bb6a' %}
+
+                @keyframes m{50%{box-shadow:0 0 22px rgba(239,83,80,.6)}}
+
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                }};border-radius:22px;--tile-color:{{ c }};{% if n > 0
+                %}animation:m 2s ease-in-out infinite{% endif %}}
+          - type: tile
+            entity: input_number.delai_capteur_muet
+            name: Délai d'alerte
+            icon: mdi:timer-alert-outline
+            features_position: bottom
+            features:
+              - type: numeric-input
+                style: slider
+            card_mod:
+              style: *glass_purple
+          - type: markdown
+            grid_options:
+              columns: 12
+            content: |
+              {% set n = states('sensor.capteurs_muets') | int(0) %}
+              {% if n == 0 %}
+              ✅ **Tous les capteurs répondent**
+              {% else %}
+              ⚠️ **{{ n }} capteur{{ 's' if n > 1 }} sans remontée**
+
+              {% for l in state_attr('sensor.capteurs_muets', 'liste').split('\n') %}
+              - {{ l }}
+              {% endfor %}
+              {% endif %}
+            card_mod:
+              style: *glass
+          - type: button
+            name: Automatisation
+            icon: mdi:robot
+            show_state: false
+            tap_action:
+              action: more-info
+            entity: automation.capteur_sans_remontee
+            grid_options:
+              columns: 12
+              rows: 1
+            card_mod:
+              style: *preset
+
+      - type: grid
+        cards:
+          - type: heading
             heading: Réseau
             heading_style: title
             icon: mdi:router-wireless

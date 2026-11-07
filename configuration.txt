@@ -10,6 +10,17 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
+# Délai (en heures) au-delà duquel un capteur sans remontée est signalé
+input_number:
+  delai_capteur_muet:
+    name: Délai capteur muet
+    icon: mdi:timer-alert-outline
+    min: 1
+    max: 48
+    step: 1
+    unit_of_measurement: h
+    mode: slider
+
 
 
 rest_command:
@@ -77,6 +88,70 @@ template:
         state: >
           {% set t = states('sensor.salle_de_bain_tasmota_salle_de_bain_am2301_12_temperature') %}
           {{ (t | float - 2) | round(1) if is_number(t) else none }}
+
+  # ---------- Surveillance des capteurs sans remontée ----------
+  # Recalculé toutes les 5 min. Ajoutez/retirez des entités dans les deux listes.
+  - triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: time_pattern
+        minutes: "/5"
+      - trigger: state
+        entity_id: input_number.delai_capteur_muet
+    actions:
+      - variables:
+          # Capteurs qui doivent envoyer une valeur régulièrement
+          surveilles:
+            - sensor.living_room_temperature_salon_air_temperature
+            - sensor.bedroom_sensor_chambre_air_temperature
+            - sensor.salle_de_bain_tasmota_salle_de_bain_am2301_12_temperature
+            - sensor.salle_de_bain_tasmota_salle_de_bain_am2301_12_humidity
+            - sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature
+            - sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_humidity
+            - sensor.salle_de_bain_tasmota_salle_de_bain_bmp180_pressure
+          # Appareils dont on vérifie seulement qu'ils sont joignables
+          joignables:
+            - sensor.living_room_tablette_esp_page_ecran
+            - sensor.living_room_temperature_salon_node_status
+            - sensor.bedroom_sensor_chambre_node_status
+            - sensor.node_5_node_status
+          muets: >-
+            {%- set delai = states('input_number.delai_capteur_muet') | float(3) * 3600 -%}
+            {%- set ns = namespace(l=[]) -%}
+            {%- for e in surveilles -%}
+              {%- set s = states[e] -%}
+              {%- if s is none -%}
+                {%- set ns.l = ns.l + [{'nom': e, 'info': 'introuvable'}] -%}
+              {%- elif s.state in ['unavailable', 'unknown'] -%}
+                {%- set ns.l = ns.l + [{'nom': s.name, 'info': 'indisponible'}] -%}
+              {%- else -%}
+                {%- set age = (now() - s.last_reported).total_seconds() -%}
+                {%- if age > delai -%}
+                  {%- set ns.l = ns.l + [{'nom': s.name, 'info': 'muet depuis ' ~ (age / 3600) | round(1) ~ ' h'}] -%}
+                {%- endif -%}
+              {%- endif -%}
+            {%- endfor -%}
+            {%- for e in joignables -%}
+              {%- set s = states[e] -%}
+              {%- if s is none or s.state in ['unavailable', 'unknown', 'dead'] -%}
+                {%- set ns.l = ns.l + [{'nom': s.name if s else e, 'info': 'injoignable'}] -%}
+              {%- endif -%}
+            {%- endfor -%}
+            {{ ns.l }}
+    sensor:
+      - name: "Capteurs muets"
+        unique_id: capteurs_muets
+        icon: >-
+          {{ 'mdi:access-point-network-off' if muets | count > 0 else 'mdi:access-point-check' }}
+        state: "{{ muets | count }}"
+        attributes:
+          # Noms seuls (stable, sert au déclenchement de l'automatisation)
+          capteurs: "{{ muets | map(attribute='nom') | list }}"
+          # Texte lisible avec la durée, pour le dashboard
+          liste: >-
+            {%- if muets | count == 0 -%}Tous les capteurs répondent
+            {%- else -%}{%- for m in muets -%}{{ m.nom }} : {{ m.info }}{{ '\n' if not loop.last }}{%- endfor -%}
+            {%- endif -%}
 
   - triggers:
       - trigger: homeassistant

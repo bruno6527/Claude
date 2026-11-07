@@ -230,3 +230,45 @@
     target:
       entity_id: switch.tasmota_3
   mode: single
+- id: '1794000000001'
+  alias: Capteur sans remontée
+  description: Notifie quand un capteur n'envoie plus de valeur depuis plus de
+    « Délai capteur muet » heures, ou devient injoignable, puis quand tout revient.
+  triggers:
+  - trigger: state
+    entity_id: sensor.capteurs_muets
+    attribute: capteurs
+    for:
+      minutes: 5
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.from_state is not none and trigger.to_state.state
+      not in [''unavailable'', ''unknown''] }}'
+  actions:
+  - variables:
+      avant: '{{ trigger.from_state.attributes.capteurs | default([], true) }}'
+      apres: '{{ trigger.to_state.attributes.capteurs | default([], true) }}'
+      nouveaux: '{{ apres | reject(''in'', avant) | list }}'
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ nouveaux | count > 0 }}'
+      sequence:
+      - action: notify.mobile_app_sm_a528b
+        data:
+          title: Capteur sans remontée
+          message: '{{ nouveaux | join('', '') }} (délai : {{ states(''input_number.delai_capteur_muet'')
+            | int(3) }} h)'
+          data:
+            tag: capteurs_muets
+    - conditions:
+      - condition: template
+        value_template: '{{ apres | count == 0 and avant | count > 0 }}'
+      sequence:
+      - action: notify.mobile_app_sm_a528b
+        data:
+          title: Capteurs rétablis
+          message: Tous les capteurs envoient de nouveau leurs valeurs.
+          data:
+            tag: capteurs_muets
+  mode: queued
