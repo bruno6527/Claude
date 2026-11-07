@@ -160,9 +160,14 @@ views:
               - type: light-brightness
             card_mod:
               style: *glass
+          # Masqué quand l'interrupteur mural est coupé (WLED hors ligne)
           - type: tile
             entity: light.wled_2
             name: Plafond
+            visibility: &vis_plafond
+              - condition: state
+                entity: light.wled_2
+                state_not: unavailable
             features:
               - type: light-brightness
             card_mod:
@@ -170,6 +175,10 @@ views:
           - type: tile
             entity: light.wled_3
             name: Plafond Matrice
+            visibility: &vis_matrice
+              - condition: state
+                entity: light.wled_3
+                state_not: unavailable
             features:
               - type: light-brightness
             card_mod:
@@ -438,13 +447,24 @@ views:
             card_mod:
               style: *glass
 
+      # Masquée quand les deux WLED du plafond sont hors ligne (interrupteur coupé)
       - type: grid
+        visibility:
+          - condition: or
+            conditions:
+              - condition: state
+                entity: light.wled_2
+                state_not: unavailable
+              - condition: state
+                entity: light.wled_3
+                state_not: unavailable
         cards:
           - type: heading
             heading: Plafond
             heading_style: title
             icon: mdi:ceiling-light
           - type: vertical-stack
+            visibility: *vis_plafond
             cards:
               - type: custom:mushroom-light-card
                 entity: light.wled_2
@@ -464,6 +484,7 @@ views:
                 card_mod:
                   style: *glass_bottom
           - type: vertical-stack
+            visibility: *vis_matrice
             cards:
               - type: custom:mushroom-light-card
                 entity: light.wled_3
