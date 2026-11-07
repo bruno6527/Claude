@@ -374,3 +374,59 @@
     data:
       transition: 5
   mode: single
+- id: '1794000000004'
+  alias: Sèche-serviette - allumage 6h45
+  description: À 6h45, du lundi au vendredi, allume le sèche-serviette si Bruno est à
+    la maison et qu'il fait moins de 18 °C dans la salle de bain. L'extinction est
+    gérée par l'automatisation « Sèche-serviette - extinction après 25 min ».
+  triggers:
+  - trigger: time
+    at: 06:45:00
+  conditions:
+  - condition: time
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+  - condition: state
+    entity_id: person.bruno
+    state: home
+  - condition: numeric_state
+    entity_id: sensor.temperature_sdb_historique
+    below: 18
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.relay_switch_1x2_5kw
+  mode: single
+- id: '1794000000005'
+  alias: Sèche-serviette - extinction après 25 min
+  description: Éteint le sèche-serviette 25 minutes après son allumage, qu'il ait été
+    allumé manuellement ou depuis Home Assistant. Au démarrage de Home Assistant,
+    l'éteint directement s'il est allumé.
+  triggers:
+  - trigger: state
+    entity_id: switch.relay_switch_1x2_5kw
+    to: 'on'
+    for:
+      minutes: 25
+    id: vingt_cinq_minutes
+  - trigger: homeassistant
+    event: start
+    id: demarrage
+  actions:
+  - if:
+    - condition: trigger
+      id: demarrage
+    then:
+    - delay:
+        seconds: 30
+  - condition: state
+    entity_id: switch.relay_switch_1x2_5kw
+    state: 'on'
+  - action: switch.turn_off
+    target:
+      entity_id: switch.relay_switch_1x2_5kw
+  mode: single
