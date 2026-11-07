@@ -1,0 +1,232 @@
+- id: '1792230321893'
+  alias: Presence
+  description: ''
+  triggers:
+  - trigger: zone.entered
+    target:
+      entity_id: person.bruno
+    options:
+      behavior: each
+      for: 00:00:00
+      zone: zone.home
+  - trigger: state
+    entity_id: sensor.sm_a528b_wi_fi_connection
+    to: Livebox-A3A7
+  conditions:
+  - condition: switch.is_on
+    target:
+      entity_id: input_boolean.mode_alarme_auto
+    options:
+      behavior: any
+      for: 00:00:00
+  actions:
+  - action: input_boolean.turn_off
+    metadata: {}
+    target:
+      entity_id: input_boolean.mode_alarme
+    data: {}
+  mode: single
+- id: '1792233364145'
+  alias: Absence
+  description: ''
+  triggers:
+  - trigger: zone.left
+    target:
+      entity_id: person.bruno
+    options:
+      behavior: each
+      for: 00:00:00
+      zone: zone.home
+  conditions:
+  - condition: switch.is_on
+    target:
+      entity_id: input_boolean.mode_alarme_auto
+    options:
+      behavior: any
+      for: 00:00:00
+  actions:
+  - action: input_boolean.turn_on
+    metadata: {}
+    target:
+      entity_id: input_boolean.mode_alarme
+    data: {}
+  mode: single
+- id: '1792309230070'
+  alias: Volume téléphone sono
+  description: Règle le volume média du téléphone depuis le curseur
+  triggers:
+  - trigger: state
+    entity_id: input_number.volume_tel_sono
+  conditions:
+  - condition: template
+    value_template: "{% set max_vol = 15 %} {{ (states('input_number.volume_tel_sono')
+      | float(0) * max_vol / 100) | round(0) | int\n   != states('sensor.tel_musique_volume_level_music')
+      | int(-1) }}\n"
+  actions:
+  - action: notify.mobile_app_tel_musique
+    data:
+      message: command_volume_level
+      data:
+        media_stream: music_stream
+        command: '{% set max_vol = 150 %} {{ (states(''input_number.volume_tel_sono'')
+          | float(0) * max_vol / 100) | round(0) | int }}
+
+          '
+        ttl: 0
+        priority: high
+  mode: restart
+- id: '1792310602978'
+  alias: Synchro curseur volume téléphone
+  description: Met à jour le curseur quand le volume change sur le téléphone
+  triggers:
+  - trigger: state
+    entity_id: sensor.tel_musique_volume_level_music
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.to_state.state is number or trigger.to_state.state
+      | int(-1) >= 0 }}'
+  actions:
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.volume_tel_sono
+    data:
+      value: '{% set max_vol = 150 %} {{ ((states(''sensor.tel_musique_volume_level_music'')
+        | float(0) * 100 / max_vol / 5) | round(0) * 5) | int }}
+
+        '
+  mode: restart
+- id: '1792312259290'
+  alias: Batterie faible tel musique et tablette
+  description: Notification sur le téléphone quand la batterie descend sous 15 %
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.tel_musique_battery_level
+    - sensor.tablette_samsung_battery_level
+    below: 20
+    for:
+      minutes: 1
+  actions:
+  - action: notify.mobile_app_sm_a528b
+    data:
+      title: Batterie faible
+      message: '{{ trigger.to_state.attributes.friendly_name }} : {{ trigger.to_state.state
+        }} %
+
+        '
+      data:
+        tag: batterie_{{ trigger.entity_id }}
+  - action: notify.mobile_app_tablette_samsung
+    data:
+      message: TTS
+      data:
+        tts_text: Batterie Faible
+  mode: parallel
+- id: '1792515894207'
+  alias: Off Mode Alarme
+  description: ''
+  triggers:
+  - trigger: switch.turned_off
+    target:
+      entity_id: input_boolean.mode_alarme
+    options:
+      behavior: each
+      for: 00:00:00
+  conditions: []
+  actions:
+  - data:
+      number: 1
+    action: rest_command.cam_salon_preset
+  mode: single
+- id: '1792516074908'
+  alias: On Mode Alarme
+  description: ''
+  triggers:
+  - trigger: switch.turned_on
+    target:
+      entity_id: input_boolean.mode_alarme
+    options:
+      behavior: each
+      for: 00:00:00
+  conditions:
+  - condition: switch.is_on
+    target:
+      entity_id: input_boolean.mode_alarme_auto
+    options:
+      behavior: any
+      for: 00:00:00
+  actions:
+  - data:
+      number: 0
+    action: rest_command.cam_salon_preset
+  mode: single
+- id: '1793086317902'
+  alias: Notif événement calendrier
+  description: Notification 15 min avant chaque événement du calendrier local
+  triggers:
+  - trigger: calendar
+    event: start
+    entity_id: calendar.calendrier
+    offset: -0:15:0
+  actions:
+  - action: notify.mobile_app_sm_a528b
+    data:
+      title: Rappel Calendrier
+      message: Test
+  mode: single
+- id: '1793817103871'
+  alias: Chauffage salle de bain - allumage 7h
+  description: À 7h, du lundi au vendredi, allume le chauffage de la salle de bain
+    si Bruno est à la maison et qu'il fait moins de 18 °C. L'extinction est gérée
+    par un autre script.
+  triggers:
+  - trigger: time
+    at: 07:05:00
+  conditions:
+  - condition: time
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+  - condition: state
+    entity_id: person.bruno
+    state: home
+  - condition: numeric_state
+    entity_id: sensor.temperature_sdb_historique
+    below: 18
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.tasmota_3
+  mode: single
+- id: '1793818370474'
+  alias: Chauffage salle de bain - extinction après 25 min
+  description: Éteint le chauffage de la salle de bain 10 minutes après son allumage,
+    qu'il ait été allumé manuellement (bouton Tasmota) ou depuis Home Assistant. Au
+    démarrage de Home Assistant, l'éteint directement s'il est allumé.
+  triggers:
+  - trigger: state
+    entity_id: switch.tasmota_3
+    to: 'on'
+    for:
+      minutes: 25
+    id: dix_minutes
+  - trigger: homeassistant
+    event: start
+    id: demarrage
+  actions:
+  - if:
+    - condition: trigger
+      id: demarrage
+    then:
+    - delay:
+        seconds: 30
+  - condition: state
+    entity_id: switch.tasmota_3
+    state: 'on'
+  - action: switch.turn_off
+    target:
+      entity_id: switch.tasmota_3
+  mode: single

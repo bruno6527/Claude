@@ -1,0 +1,118 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+
+
+rest_command:
+  cam_salon_haut:
+    url: "http://192.168.0.20/cgi-bin/hi3510/ptzup.cgi"
+    username: admin
+    password: !secret cam_salon_password
+  cam_salon_bas:
+    url: "http://192.168.0.20/cgi-bin/hi3510/ptzdown.cgi"
+    username: admin
+    password: !secret cam_salon_password
+  cam_salon_gauche:
+    url: "http://192.168.0.20/cgi-bin/hi3510/ptzleft.cgi"
+    username: admin
+    password: !secret cam_salon_password
+  cam_salon_droite:
+    url: "http://192.168.0.20/cgi-bin/hi3510/ptzright.cgi"
+    username: admin
+    password: !secret cam_salon_password
+  cam_salon_stop:
+    url: "http://192.168.0.20/cgi-bin/hi3510/ptzstop.cgi"
+    username: admin
+    password: !secret cam_salon_password
+  cam_salon_ir:
+    url: "http://192.168.0.20/cgi-bin/hi3510/param.cgi?cmd=setinfrared&-infraredstat={{ mode }}"
+    username: admin
+    password: !secret cam_salon_password
+  cam_salon_preset:
+    url: "http://192.168.0.20/cgi-bin/hi3510/param.cgi?cmd=preset&-act=goto&-number={{ number }}"
+    username: admin
+    password: !secret cam_salon_password
+  cam_salon_alarm_on:
+    url: "http://192.168.0.20/cgi-bin/hi3510/param.cgi?cmd=setmdattr&-enable=1&-s=100&-name=1&-x=0&-y=0&-w=1920&-h=1080"
+    username: admin
+    password: !secret cam_salon_password
+  cam_salon_alarm_off:
+    url: "http://192.168.0.20/cgi-bin/hi3510/param.cgi?cmd=setmdattr&-enable=0&-s=100&-name=1&-x=0&-y=0&-w=1920&-h=1080"
+    username: admin
+    password: !secret cam_salon_password
+
+  croquettes:
+    url: "http://192.168.0.222/start"
+    method: get
+    timeout: 10
+    
+rest:
+  - resource: "http://192.168.0.197/cgi-bin/hi3510/param.cgi?cmd=getinfrared"
+    authentication: basic
+    username: admin
+    password: !secret cam_salon_password
+    scan_interval: 60
+    sensor:
+      - name: "Caméra salon IR"
+        value_template: >
+          {{ value | regex_findall_index('infraredstat="(\w+)"') }}
+
+
+template:
+  - sensor:
+      - name: "Température SDB Corrigee"
+        unique_id: temperature_sdb_corrigee
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        state: >
+          {% set t = states('sensor.salle_de_bain_tasmota_salle_de_bain_am2301_12_temperature') %}
+          {{ (t | float - 2) | round(1) if is_number(t) else none }}
+
+  - triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: time_pattern
+        minutes: "/30"
+    actions:
+      - action: weather.get_forecasts
+        target:
+          entity_id: weather.forecast_home
+        data:
+          type: daily
+        response_variable: daily
+    sensor:
+      - name: "Previsions meteo"
+        unique_id: previsions_meteo_esp
+        state: "{{ daily['weather.forecast_home'].forecast | length }}"
+        attributes:
+          cond: >-
+            {%- set f = daily['weather.forecast_home'].forecast[:6] -%}
+            {%- for d in f -%}{{ d.get('condition', 'cloudy') }}{{ ',' if not loop.last }}{%- endfor -%}
+          tmax: >-
+            {%- set f = daily['weather.forecast_home'].forecast[:6] -%}
+            {%- for d in f -%}{{ d.get('temperature', 0) | float(0) | round(1) }}{{ ',' if not loop.last }}{%- endfor -%}
+          tmin: >-
+            {%- set f = daily['weather.forecast_home'].forecast[:6] -%}
+            {%- for d in f -%}{{ d.get('templow', d.get('temperature', 0)) | float(0) | round(1) }}{{ ',' if not loop.last }}{%- endfor -%}
+          rain: >-
+            {%- set f = daily['weather.forecast_home'].forecast[:6] -%}
+            {%- for d in f -%}{{ d.get('precipitation', 0) | float(0) | round(1) }}{{ ',' if not loop.last }}{%- endfor -%}
+          wspd: >-
+            {%- set f = daily['weather.forecast_home'].forecast[:6] -%}
+            {%- for d in f -%}{{ d.get('wind_speed', 0) | float(0) | round(0) | int }}{{ ',' if not loop.last }}{%- endfor -%}
+          wdir: >-
+            {%- set f = daily['weather.forecast_home'].forecast[:6] -%}
+            {%- for d in f -%}{{ d.get('wind_bearing', 0) | float(0) | round(0) | int }}{{ ',' if not loop.last }}{%- endfor -%}
+          dow: >-
+            {%- set f = daily['weather.forecast_home'].forecast[:6] -%}
+            {%- for d in f -%}{{ (d['datetime'] | as_datetime | as_local).weekday() }}{{ ',' if not loop.last }}{%- endfor -%}
