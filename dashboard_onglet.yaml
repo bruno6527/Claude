@@ -264,6 +264,147 @@ views:
                 ha-card{background:rgba(239,83,80,.14);border:1px solid
                 rgba(239,83,80,.40);border-radius:22px;--paper-item-icon-color:#ef9a9a}
 
+      # Ambiances : scènes définies dans scenes.yaml
+      - &ambiances
+        type: grid
+        cards:
+          - type: heading
+            heading: Ambiances
+            heading_style: title
+            icon: mdi:palette
+          - type: grid
+            columns: 3
+            square: false
+            grid_options:
+              columns: 12
+            cards:
+              - type: button
+                name: Cinéma
+                icon: mdi:movie-open
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.cinema
+                  data:
+                    transition: 2
+                card_mod:
+                  style: >-
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#ffb74d}
+              - type: button
+                name: Éclairage blanc
+                icon: mdi:lightbulb-on
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.eclairage_blanc
+                  data:
+                    transition: 2
+                card_mod:
+                  style: >-
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#e3f2fd}
+              - type: button
+                name: Détente
+                icon: mdi:sofa
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.detente
+                  data:
+                    transition: 2
+                card_mod:
+                  style: >-
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#ffcc80}
+              - type: button
+                name: Repas
+                icon: mdi:silverware-fork-knife
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.repas
+                  data:
+                    transition: 2
+                card_mod:
+                  style: >-
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#ffe0b2}
+              - type: button
+                name: Lecture
+                icon: mdi:book-open-variant
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.lecture
+                  data:
+                    transition: 2
+                card_mod:
+                  style: >-
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#b3e5fc}
+              - type: button
+                name: Veilleuse
+                icon: mdi:weather-night
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.veilleuse
+                  data:
+                    transition: 2
+                card_mod:
+                  style: >-
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#ff8a65}
+              - type: button
+                name: Fête
+                icon: mdi:party-popper
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.fete
+                  data:
+                    transition: 2
+                card_mod:
+                  style: >-
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#ce93d8}
+              - type: button
+                name: Réveil
+                icon: mdi:weather-sunset-up
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.reveil
+                  data:
+                    transition: 2
+                card_mod:
+                  style: >-
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#ffd54f}
+              - type: button
+                name: Tout éteindre
+                icon: mdi:lightbulb-group-off
+                tap_action:
+                  action: perform-action
+                  perform_action: scene.turn_on
+                  target:
+                    entity_id: scene.tout_eteindre
+                  data:
+                    transition: 2
+                card_mod:
+                  style: >-
+                    ha-card{background:var(--card-background-color);border:1px solid
+                    var(--divider-color);border-radius:16px;--paper-item-icon-color:#ef9a9a}
+
       - type: grid
         cards:
           - type: heading
@@ -451,6 +592,7 @@ views:
     type: sections
     max_columns: 3
     sections:
+      - *ambiances
       - type: grid
         cards:
           - type: heading

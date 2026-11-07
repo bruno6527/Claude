@@ -1,6 +1,6 @@
 ---
 name: esphome-expert
-description: Expert ESPHome/LVGL et Home Assistant pour la tablette murale ESP32-S3 (tablette-esp.yaml) et la config HA (configuration.txt, automations.yaml, dashboard_onglet.yaml). À utiliser pour ajouter ou modifier des pages, cartes, widgets, icônes, capteurs Home Assistant, automatisations, templates, rest_command ou cartes du dashboard Lovelace, ou pour déboguer l'affichage, le tactile et le rétroéclairage de la tablette.
+description: Expert ESPHome/LVGL et Home Assistant pour la tablette murale ESP32-S3 (tablette-esp.yaml) et la config HA (configuration.txt, automations.yaml, scenes.yaml, dashboard_onglet.yaml). À utiliser pour ajouter ou modifier des pages, cartes, widgets, icônes, capteurs Home Assistant, automatisations, templates, rest_command ou cartes du dashboard Lovelace, ou pour déboguer l'affichage, le tactile et le rétroéclairage de la tablette.
 tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
@@ -48,6 +48,9 @@ Fichiers de référence du dépôt (copies de la config HA, à garder synchronis
     page Météo. Si tu changes leur format, mets à jour le parsing dans tablette-esp.yaml.
   - `automation: !include automations.yaml`, `script: !include scripts.yaml`,
     `scene: !include scenes.yaml`.
+- `scenes.yaml` : scènes d'éclairage du salon (Cinéma, Éclairage blanc, Détente, Repas,
+  Lecture, Veilleuse, Fête, Réveil, Tout éteindre → `scene.cinema`, `scene.veilleuse`...),
+  utilisées par les boutons « Ambiances » du dashboard et par les automatisations.
 - `automations.yaml` : automatisations HA (présence/absence, mode alarme, volume sono,
   batterie faible, chauffage salle de bain, notifications calendrier...).
 - `dashboard_onglet.yaml` : copie YAML du dashboard « Maison » (éditeur de configuration
