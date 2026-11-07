@@ -1,11 +1,17 @@
 title: Maison
 views:
+  # =====================================================================
+  # ACCUEIL : l'essentiel en un coup d'œil
+  # =====================================================================
   - title: Accueil
     path: accueil
     icon: mdi:home
     type: sections
     max_columns: 4
-    background: linear-gradient(160deg,#0f2027,#203a43 50%,#2c5364) fixed
+    background: &bg >-
+      radial-gradient(1100px 600px at 0% -10%,rgba(6,182,212,.10),transparent 60%),
+      radial-gradient(900px 520px at 110% 0%,rgba(139,92,246,.10),transparent 60%),
+      linear-gradient(160deg,#050b18 0%,#08142d 55%,#0b1a33 100%) fixed
     sections:
       - type: grid
         cards:
@@ -13,6 +19,26 @@ views:
             heading: Aperçu
             heading_style: title
             icon: mdi:view-dashboard
+            badges:
+              - type: entity
+                entity: person.bruno
+                show_state: true
+                show_icon: true
+              - type: entity
+                entity: sensor.living_room_temperature_salon_air_temperature
+                show_state: true
+                show_icon: true
+          - type: weather-forecast
+            entity: weather.forecast_home
+            forecast_type: daily
+            show_current: true
+            show_forecast: true
+            grid_options:
+              columns: 12
+            card_mod:
+              style: &glass >-
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-radius:22px}
           - type: button
             entity: input_boolean.mode_alarme
             name: Alarme
@@ -21,7 +47,7 @@ views:
             tap_action:
               action: toggle
             card_mod:
-              style: >
+              style: &alarm >
                 @keyframes p{0%,100%{box-shadow:0 0 0 0
                 rgba(239,83,80,.65)}50%{box-shadow:0 0 26px 8px
                 rgba(239,83,80,.55)}}
@@ -32,132 +58,253 @@ views:
                 solid
                 rgba(255,255,255,.35);color:#fff;--paper-item-icon-color:#fff;animation:p
                 2s ease-in-out infinite{% else
-                %}background:rgba(255,255,255,.07);border:1px solid
-                rgba(255,255,255,.12);--paper-item-icon-color:#81c784{% endif
+                %}background:rgba(13,23,42,.72);border:1px solid
+                rgba(148,163,184,.16);--paper-item-icon-color:#81c784{% endif
                 %}}
           - type: button
-            name: Croquettes Pierrette
+            name: Croquettes
             icon: mdi:paw
             tap_action:
               action: perform-action
               perform_action: rest_command.croquettes
+              confirmation:
+                text: Donner des croquettes à Pierrette ?
             card_mod:
-              style: >-
-                ha-card{background:linear-gradient(135deg,rgba(255,138,101,.35),rgba(255,204,128,.25));backdrop-filter:blur(14px);border:1px
+              style: &croq >-
+                ha-card{background:linear-gradient(135deg,rgba(255,138,101,.30),rgba(255,204,128,.18));backdrop-filter:blur(14px);border:1px
                 solid
-                rgba(255,255,255,.2);border-radius:22px;--paper-item-icon-color:#ffab91}
-          - type: tile
-            entity: switch.tasmota
-            name: Prise Tasmota
-            card_mod:
-              style: >
-                @keyframes g{0%,100%{box-shadow:0 0 8px
-                rgba(255,179,0,.35)}50%{box-shadow:0 0 24px
-                rgba(255,179,0,.75)}}
+                rgba(255,204,128,.30);border-radius:22px;--paper-item-icon-color:#ffab91}
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px;{% if
-                is_state('switch.tasmota','on')
-                %}--tile-color:#ffb300;animation:g 2.6s ease-in-out infinite{%
-                endif %}}
+      - type: grid
+        cards:
+          - type: heading
+            heading: Températures
+            heading_style: title
+            icon: mdi:thermometer
+            tap_action:
+              action: navigate
+              navigation_path: climat
+          - type: tile
+            entity: sensor.living_room_temperature_salon_air_temperature
+            name: Salon
+            icon: mdi:sofa
+            card_mod:
+              style: &temp_salon >
+                {% set t = states('sensor.living_room_temperature_salon_air_temperature') | float(20)
+                %}{% set c = '#4fc3f7' if t < 18 else ('#66bb6a' if t < 24 else
+                '#ff7043') %}
+
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                }};border-radius:22px;--tile-color:{{ c }}}
+          - type: tile
+            entity: sensor.bedroom_sensor_chambre_air_temperature
+            name: Chambre
+            icon: mdi:bed
+            card_mod:
+              style: &temp_chambre >
+                {% set t = states('sensor.bedroom_sensor_chambre_air_temperature') | float(19)
+                %}{% set c = '#4fc3f7' if t < 17 else ('#66bb6a' if t < 23 else
+                '#ff7043') %}
+
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                }};border-radius:22px;--tile-color:{{ c }}}
+          - type: tile
+            entity: sensor.temperature_sdb_corrigee
+            name: Salle de bain
+            icon: mdi:shower
+            card_mod:
+              style: &temp_sdb >
+                {% set t = states('sensor.temperature_sdb_corrigee') | float(20)
+                %}{% set c = '#4fc3f7' if t < 18 else ('#66bb6a' if t < 24 else
+                '#ff7043') %}
+
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                }};border-radius:22px;--tile-color:{{ c }}}
+          - type: tile
+            entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature
+            name: Extérieur
+            icon: mdi:home-thermometer-outline
+            card_mod:
+              style: &temp_ext >
+                {% set t = states('sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature')
+                | float(15) %}{% set c = '#4fc3f7' if t < 10 else ('#66bb6a' if
+                t < 25 else '#ff7043') %}
+
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                }};border-radius:22px;--tile-color:{{ c }}}
+
       - type: grid
         cards:
           - type: heading
             heading: Lumières
             heading_style: title
             icon: mdi:lightbulb-group-outline
+            tap_action:
+              action: navigate
+              navigation_path: eclairage
           - type: tile
             entity: light.living_room_cadre_wled
             name: Cadre
             features:
               - type: light-brightness
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
           - type: tile
             entity: light.buffet_groupe
             name: Buffet
             features:
               - type: light-brightness
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
+          # Masqué quand l'interrupteur mural est coupé (WLED hors ligne)
           - type: tile
             entity: light.wled_2
             name: Plafond
+            visibility: &vis_plafond
+              - condition: state
+                entity: light.wled_2
+                state_not: unavailable
             features:
               - type: light-brightness
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
           - type: tile
             entity: light.wled_3
             name: Plafond Matrice
+            visibility: &vis_matrice
+              - condition: state
+                entity: light.wled_3
+                state_not: unavailable
             features:
               - type: light-brightness
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
           - type: tile
             entity: light.living_room_cube_wled_main
             name: Cube
             features:
               - type: light-brightness
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
+          - type: button
+            name: Tout éteindre
+            icon: mdi:lightbulb-group-off
+            tap_action:
+              action: perform-action
+              perform_action: light.turn_off
+              target:
+                entity_id:
+                  - light.living_room_cadre_wled
+                  - light.buffet_groupe
+                  - light.wled_2
+                  - light.wled_3
+                  - light.living_room_cube_wled_main
+            grid_options:
+              columns: 12
+              rows: 1
+            card_mod:
+              style: &btn_off >-
+                ha-card{background:rgba(239,83,80,.14);border:1px solid
+                rgba(239,83,80,.40);border-radius:22px;--paper-item-icon-color:#ef9a9a}
+
       - type: grid
         cards:
           - type: heading
-            heading: Climat
+            heading: Prises et chauffage
             heading_style: title
-            icon: mdi:thermometer
+            icon: mdi:power-socket-eu
           - type: tile
-            entity: sensor.temperature_sdb_corrigee
-            name: Salle de bain
-            vertical: false
+            entity: switch.tasmota_3
+            name: Chauffage SDB
+            icon: mdi:radiator
+            features:
+              - type: toggle
             card_mod:
-              style: >
-                {% set t = states('sensor.temperature_sdb_corrigee') | float(20)
-                %}{% set c = '#4fc3f7' if t < 18 else ('#66bb6a' if t < 24 else
-                '#ff7043') %}
+              style: &glow_chauffage >
+                @keyframes g{0%,100%{box-shadow:0 0 8px
+                rgba(249,115,22,.35)}50%{box-shadow:0 0 24px
+                rgba(249,115,22,.75)}}
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
-                }};border-radius:22px;--tile-color:{{ c }}}
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-radius:22px;{% if
+                is_state('switch.tasmota_3','on')
+                %}--tile-color:#f97316;animation:g 2.6s ease-in-out infinite{%
+                endif %}}
           - type: tile
-            entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature
-            name: Extérieur
-            vertical: false
+            entity: switch.tasmota
+            name: Prise Tasmota
+            icon: mdi:lamp
+            features:
+              - type: toggle
             card_mod:
-              style: >
-                {% set t =
-                states('sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature')
-                | float(15) %}{% set c = '#4fc3f7' if t < 10 else ('#66bb6a' if
-                t < 25 else '#ff7043') %}
+              style: &glow_tasmota >
+                @keyframes g{0%,100%{box-shadow:0 0 8px
+                rgba(255,179,0,.35)}50%{box-shadow:0 0 24px
+                rgba(255,179,0,.75)}}
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
-                }};border-radius:22px;--tile-color:{{ c }}}
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-radius:22px;{% if
+                is_state('switch.tasmota','on')
+                %}--tile-color:#ffb300;animation:g 2.6s ease-in-out infinite{%
+                endif %}}
           - type: tile
-            entity: sensor.bedroom_sensor_chambre_air_temperature
-            name: Chambre
-            vertical: false
+            entity: switch.tasmota_2
+            name: Prise sono
+            icon: mdi:speaker
+            features:
+              - type: toggle
             card_mod:
-              style: >
-                {% set t =
-                states('sensor.bedroom_sensor_chambre_air_temperature') |
-                float(19) %}{% set c = '#4fc3f7' if t < 17 else ('#66bb6a' if t
-                < 23 else '#ff7043') %}
+              style: *glass
+          - type: tile
+            entity: switch.relay_switch_1x2_5kw
+            name: Relais Z-Wave
+            icon: mdi:electric-switch
+            features:
+              - type: toggle
+            card_mod:
+              style: *glass
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
-                }};border-radius:22px;--tile-color:{{ c }}}
+      # Visible uniquement pendant une impression
+      - type: grid
+        visibility:
+          - condition: or
+            conditions:
+              - condition: state
+                entity: sensor.bureau_snapmaker_u1_current_print_state
+                state: printing
+              - condition: state
+                entity: sensor.bureau_snapmaker_u1_current_print_state
+                state: paused
+        cards:
+          - type: heading
+            heading: Impression 3D en cours
+            heading_style: title
+            icon: mdi:printer-3d-nozzle
+            tap_action:
+              action: navigate
+              navigation_path: bureau
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_progress
+            name: Progression
+            icon: mdi:progress-clock
+            features:
+              - type: bar-gauge
+            card_mod:
+              style: &glass_cyan >-
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid
+                #06b6d4;border-radius:22px;--tile-color:#06b6d4}
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_print_time_left
+            name: Temps restant
+            icon: mdi:timer-sand
+            card_mod:
+              style: *glass_cyan
+
       - type: grid
         cards:
           - type: heading
@@ -170,15 +317,15 @@ views:
             features:
               - type: bar-gauge
             card_mod:
-              style: >
+              style: &batt_samsung >
                 @keyframes b{50%{opacity:.55}}
 
                 {% set v = states('sensor.sm_a528b_battery_level') | float(100)
                 %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v < 50 else
                 '#66bb6a') %}
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
                 %}animation:b 1.4s infinite{% endif %}}
           - type: tile
@@ -187,15 +334,15 @@ views:
             features:
               - type: bar-gauge
             card_mod:
-              style: >
+              style: &batt_musique >
                 @keyframes b{50%{opacity:.55}}
 
                 {% set v = states('sensor.tel_musique_battery_level') |
                 float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
                 < 50 else '#66bb6a') %}
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
                 %}animation:b 1.4s infinite{% endif %}}
           - type: tile
@@ -204,23 +351,61 @@ views:
             features:
               - type: bar-gauge
             card_mod:
-              style: >
+              style: &batt_tablette >
                 @keyframes b{50%{opacity:.55}}
 
                 {% set v = states('sensor.tablette_samsung_battery_level') |
                 float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
                 < 50 else '#66bb6a') %}
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
                 }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
                 %}animation:b 1.4s infinite{% endif %}}
+          - type: tile
+            entity: sensor.living_room_temperature_salon_battery_level
+            name: Capteur salon
+            features:
+              - type: bar-gauge
+            card_mod:
+              style: &batt_salon >
+                @keyframes b{50%{opacity:.55}}
+
+                {% set v = states('sensor.living_room_temperature_salon_battery_level') |
+                float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
+                < 50 else '#66bb6a') %}
+
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
+                %}animation:b 1.4s infinite{% endif %}}
+          - type: tile
+            entity: sensor.bedroom_sensor_chambre_battery_level
+            name: Capteur chambre
+            features:
+              - type: bar-gauge
+            card_mod:
+              style: &batt_chambre >
+                @keyframes b{50%{opacity:.55}}
+
+                {% set v = states('sensor.bedroom_sensor_chambre_battery_level') |
+                float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
+                < 50 else '#66bb6a') %}
+
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
+                %}animation:b 1.4s infinite{% endif %}}
+
+  # =====================================================================
+  # ÉCLAIRAGE
+  # =====================================================================
   - title: Éclairage
     path: eclairage
     icon: mdi:lightbulb-group
     type: sections
     max_columns: 3
-    background: linear-gradient(160deg,#0f2027,#203a43 50%,#2c5364) fixed
+    background: *bg
     sections:
       - type: grid
         cards:
@@ -228,21 +413,29 @@ views:
             heading: Salon
             heading_style: title
             icon: mdi:sofa
-          - type: custom:mushroom-light-card
-            entity: light.living_room_cadre_wled
-            name: Cadre
-            use_light_color: true
-            show_brightness_control: true
-            show_color_control: true
-            show_color_temp_control: true
-            collapsible_controls: true
-            grid_options:
-              columns: 12
-              rows: 2
-            card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+          - type: vertical-stack
+            cards:
+              - type: custom:mushroom-light-card
+                entity: light.living_room_cadre_wled
+                name: Cadre
+                use_light_color: true
+                show_brightness_control: true
+                show_color_control: true
+                show_color_temp_control: true
+                collapsible_controls: true
+                card_mod:
+                  style: &glass_top >-
+                    ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                    solid rgba(148,163,184,.16);border-radius:22px 22px 0 0}
+              - type: custom:mushroom-select-card
+                entity: select.living_room_cadre_wled_preset
+                name: Preset cadre
+                icon: mdi:palette
+                icon_type: icon
+                card_mod:
+                  style: &glass_bottom >-
+                    ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                    solid rgba(148,163,184,.16);border-radius:0 0 22px 22px}
           - type: custom:mushroom-light-card
             entity: light.buffet_groupe
             name: Buffet
@@ -251,49 +444,66 @@ views:
             show_color_control: true
             show_color_temp_control: true
             collapsible_controls: true
-            grid_options:
-              columns: 12
-              rows: 2
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
+
+      # Masquée quand les deux WLED du plafond sont hors ligne (interrupteur coupé)
       - type: grid
+        visibility:
+          - condition: or
+            conditions:
+              - condition: state
+                entity: light.wled_2
+                state_not: unavailable
+              - condition: state
+                entity: light.wled_3
+                state_not: unavailable
         cards:
           - type: heading
             heading: Plafond
             heading_style: title
             icon: mdi:ceiling-light
-          - type: custom:mushroom-light-card
-            entity: light.wled_2
-            name: Plafond
-            use_light_color: true
-            show_brightness_control: true
-            show_color_control: true
-            show_color_temp_control: true
-            collapsible_controls: true
-            grid_options:
-              columns: 12
-              rows: 2
-            card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
-          - type: custom:mushroom-light-card
-            entity: light.wled_3
-            name: Plafond Matrice
-            use_light_color: true
-            show_brightness_control: true
-            show_color_control: true
-            show_color_temp_control: true
-            collapsible_controls: true
-            grid_options:
-              columns: 12
-              rows: 2
-            card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+          - type: vertical-stack
+            visibility: *vis_plafond
+            cards:
+              - type: custom:mushroom-light-card
+                entity: light.wled_2
+                name: Plafond
+                use_light_color: true
+                show_brightness_control: true
+                show_color_control: true
+                show_color_temp_control: true
+                collapsible_controls: true
+                card_mod:
+                  style: *glass_top
+              - type: custom:mushroom-select-card
+                entity: select.wled_preset_2
+                name: Preset plafond
+                icon: mdi:palette
+                icon_type: icon
+                card_mod:
+                  style: *glass_bottom
+          - type: vertical-stack
+            visibility: *vis_matrice
+            cards:
+              - type: custom:mushroom-light-card
+                entity: light.wled_3
+                name: Plafond Matrice
+                use_light_color: true
+                show_brightness_control: true
+                show_color_control: true
+                show_color_temp_control: true
+                collapsible_controls: true
+                card_mod:
+                  style: *glass_top
+              - type: custom:mushroom-select-card
+                entity: select.wled_preset_3
+                name: Preset matrice
+                icon: mdi:palette
+                icon_type: icon
+                card_mod:
+                  style: *glass_bottom
+
       - type: grid
         cards:
           - type: heading
@@ -311,98 +521,64 @@ views:
                 show_color_temp_control: true
                 collapsible_controls: true
                 card_mod:
-                  style: >-
-                    ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                    solid rgba(255,255,255,.12);border-radius:22px 22px 0 0}
+                  style: *glass_top
               - type: custom:mushroom-select-card
                 entity: select.living_room_cube_wled_preset
-                name: Cube Preset
+                name: Preset cube
                 icon: mdi:palette
                 icon_type: icon
                 card_mod:
-                  style: >-
-                    ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                    solid rgba(255,255,255,.12);border-radius:0 0 22px 22px}
-          - type: tile
-            entity: switch.tasmota
-            name: Prise Tasmota
+                  style: *glass_bottom
+          - type: button
+            name: Tout éteindre
+            icon: mdi:lightbulb-group-off
+            tap_action:
+              action: perform-action
+              perform_action: light.turn_off
+              target:
+                entity_id:
+                  - light.living_room_cadre_wled
+                  - light.buffet_groupe
+                  - light.wled_2
+                  - light.wled_3
+                  - light.living_room_cube_wled_main
+            grid_options:
+              columns: 12
+              rows: 1
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *btn_off
+
+  # =====================================================================
+  # CLIMAT
+  # =====================================================================
   - title: Climat
     path: climat
     icon: mdi:thermometer
     type: sections
-    max_columns: 3
-    background: linear-gradient(160deg,#0f2027,#203a43 50%,#2c5364) fixed
+    max_columns: 4
+    background: *bg
     sections:
       - type: grid
         cards:
           - type: heading
-            heading: Salle de bain
+            heading: Salon
             heading_style: title
-            icon: mdi:shower
+            icon: mdi:sofa
           - type: tile
-            entity: sensor.temperature_sdb_corrigee
+            entity: sensor.living_room_temperature_salon_air_temperature
             name: Température
-            vertical: false
             card_mod:
-              style: >
-                {% set t = states('sensor.temperature_sdb_corrigee') | float(20)
-                %}{% set c = '#4fc3f7' if t < 18 else ('#66bb6a' if t < 24 else
-                '#ff7043') %}
+              style: *temp_salon
+          - type: tile
+            entity: sensor.living_room_temperature_salon_illuminance
+            name: Luminosité
+            icon: mdi:brightness-6
+            card_mod:
+              style: &glass_yellow >-
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid
+                #ffd54f;border-radius:22px;--tile-color:#ffd54f}
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
-                }};border-radius:22px;--tile-color:{{ c }}}
-          - type: tile
-            entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_12_humidity
-            name: Humidité
-            vertical: false
-            card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid
-                #42a5f5;border-radius:22px;--tile-color:#42a5f5}
-          - type: tile
-            entity: sensor.salle_de_bain_tasmota_salle_de_bain_bmp180_pressure
-            name: Pression atmosphérique
-            vertical: false
-            card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid
-                #9575cd;border-radius:22px;--tile-color:#9575cd}
-      - type: grid
-        cards:
-          - type: heading
-            heading: Extérieur
-            heading_style: title
-            icon: mdi:weather-partly-cloudy
-          - type: tile
-            entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature
-            name: Température
-            vertical: false
-            card_mod:
-              style: >
-                {% set t =
-                states('sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature')
-                | float(15) %}{% set c = '#4fc3f7' if t < 10 else ('#66bb6a' if
-                t < 25 else '#ff7043') %}
-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
-                }};border-radius:22px;--tile-color:{{ c }}}
-          - type: tile
-            entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_humidity
-            name: Humidité
-            vertical: false
-            card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid
-                #42a5f5;border-radius:22px;--tile-color:#42a5f5}
       - type: grid
         cards:
           - type: heading
@@ -412,19 +588,93 @@ views:
           - type: tile
             entity: sensor.bedroom_sensor_chambre_air_temperature
             name: Température
-            vertical: false
             card_mod:
-              style: >
-                {% set t =
-                states('sensor.bedroom_sensor_chambre_air_temperature') |
-                float(19) %}{% set c = '#4fc3f7' if t < 17 else ('#66bb6a' if t
-                < 23 else '#ff7043') %}
+              style: *temp_chambre
+          - type: tile
+            entity: sensor.bedroom_sensor_chambre_illuminance
+            name: Luminosité
+            icon: mdi:brightness-6
+            card_mod:
+              style: *glass_yellow
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
-                }};border-radius:22px;--tile-color:{{ c }}}
       - type: grid
-        column_span: 3
+        cards:
+          - type: heading
+            heading: Salle de bain
+            heading_style: title
+            icon: mdi:shower
+          - type: tile
+            entity: sensor.temperature_sdb_corrigee
+            name: Température
+            card_mod:
+              style: *temp_sdb
+          - type: tile
+            entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_12_humidity
+            name: Humidité
+            card_mod:
+              style: &glass_blue >-
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid
+                #42a5f5;border-radius:22px;--tile-color:#42a5f5}
+          - type: tile
+            entity: switch.tasmota_3
+            name: Chauffage
+            icon: mdi:radiator
+            features:
+              - type: toggle
+            card_mod:
+              style: *glow_chauffage
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Extérieur
+            heading_style: title
+            icon: mdi:weather-partly-cloudy
+          - type: tile
+            entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature
+            name: Température
+            card_mod:
+              style: *temp_ext
+          - type: tile
+            entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_humidity
+            name: Humidité
+            card_mod:
+              style: *glass_blue
+          - type: tile
+            entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_dewpoint
+            name: Point de rosée
+            icon: mdi:water-thermometer
+            card_mod:
+              style: *glass_blue
+          - type: tile
+            entity: sensor.salle_de_bain_tasmota_salle_de_bain_bmp180_pressure
+            name: Pression
+            card_mod:
+              style: &glass_purple >-
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid
+                #9575cd;border-radius:22px;--tile-color:#9575cd}
+
+      - type: grid
+        column_span: 4
+        cards:
+          - type: heading
+            heading: Prévisions
+            heading_style: title
+            icon: mdi:weather-cloudy-clock
+          - type: weather-forecast
+            entity: weather.forecast_home
+            forecast_type: daily
+            show_current: true
+            show_forecast: true
+            grid_options:
+              columns: 12
+            card_mod:
+              style: *glass
+
+      - type: grid
+        column_span: 4
         cards:
           - type: heading
             heading: Historique
@@ -438,52 +688,150 @@ views:
               columns: 12
               rows: 4
             entities:
+              - entity: sensor.living_room_temperature_salon_air_temperature
+                name: Salon
+              - entity: sensor.bedroom_sensor_chambre_air_temperature
+                name: Chambre
               - entity: sensor.temperature_sdb_corrigee
                 name: SDB
               - entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_temperature
-                name: EXT
-              - entity: sensor.bedroom_sensor_chambre_air_temperature
-                name: Chambre
+                name: Extérieur
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
           - type: history-graph
             title: Humidité (48 h)
             hours_to_show: 48
             show_names: true
             grid_options:
-              columns: 12
+              columns: 6
               rows: 3
             entities:
               - entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_12_humidity
                 name: SDB
               - entity: sensor.salle_de_bain_tasmota_salle_de_bain_am2301_13_humidity
-                name: EXT
+                name: Extérieur
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
           - type: history-graph
             title: Pression (48 h)
             hours_to_show: 48
             show_names: true
             grid_options:
-              columns: 12
+              columns: 6
               rows: 3
             entities:
               - entity: sensor.salle_de_bain_tasmota_salle_de_bain_bmp180_pressure
                 name: Pression
             card_mod:
+              style: *glass
+
+  # =====================================================================
+  # SÉCURITÉ
+  # =====================================================================
+  - title: Sécurité
+    path: securite
+    icon: mdi:shield-home
+    type: sections
+    max_columns: 3
+    background: *bg
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Mode alarme
+            heading_style: title
+            icon: mdi:shield-home
+          - type: button
+            entity: input_boolean.mode_alarme
+            name: Alarme
+            icon: mdi:shield-home
+            show_state: true
+            tap_action:
+              action: toggle
+            card_mod:
+              style: *alarm
+          - type: tile
+            entity: input_boolean.mode_alarme_auto
+            name: Alarme automatique
+            features:
+              - type: toggle
+            card_mod:
+              style: >
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-radius:22px;{% if
+                is_state('input_boolean.mode_alarme_auto','on')
+                %}--tile-color:#ef5350;border-left:5px solid #ef5350{% endif %}}
+          - type: tile
+            entity: alarm_control_panel.alarmo
+            name: Alarmo
+            features:
+              - type: alarm-modes
+                modes:
+                  - armed_away
+                  - armed_home
+                  - disarmed
+            card_mod:
+              style: *glass
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Détecteurs
+            heading_style: title
+            icon: mdi:motion-sensor
+          - type: tile
+            entity: binary_sensor.living_room_temperature_salon_motion_detection
+            name: Mouvement salon
+            card_mod:
+              style: &motion >-
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-radius:22px;--tile-color:#ef5350}
+          - type: tile
+            entity: binary_sensor.bedroom_sensor_chambre_motion_detection
+            name: Mouvement chambre
+            card_mod:
+              style: *motion
+          - type: tile
+            entity: binary_sensor.living_room_tablette_esp_mouvement
+            name: Présence tablette
+            card_mod:
+              style: *motion
+          - type: tile
+            entity: binary_sensor.living_room_temperature_salon_tampering_product_cover_removed
+            name: Capteur salon ouvert
+            icon: mdi:shield-alert
+            card_mod:
+              style: *motion
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Vue rapide
+            heading_style: title
+            icon: mdi:cctv
+            tap_action:
+              action: navigate
+              navigation_path: camera
+          - type: picture-entity
+            entity: camera.living_room_camera_salon
+            camera_view: live
+            fit_mode: cover
+            show_state: false
+            show_name: false
+            card_mod:
               style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+                ha-card{border:1px solid
+                rgba(148,163,184,.16);border-radius:22px;overflow:hidden}
+
+  # =====================================================================
+  # CAMÉRA
+  # =====================================================================
   - title: Caméra
     path: camera
     icon: mdi:cctv
     type: sections
     max_columns: 2
-    background: linear-gradient(160deg,#0f2027,#203a43 50%,#2c5364) fixed
+    background: *bg
     sections:
       - type: grid
         cards:
@@ -502,7 +850,7 @@ views:
                 card_mod:
                   style: >-
                     ha-card{border:1px solid
-                    rgba(255,255,255,.12);border-radius:22px 22px 0
+                    rgba(148,163,184,.16);border-radius:22px 22px 0
                     0;overflow:hidden}
               - type: grid
                 columns: 5
@@ -515,10 +863,10 @@ views:
                       action: perform-action
                       perform_action: rest_command.cam_salon_gauche
                     card_mod:
-                      style: >-
-                        ha-card{background:rgba(255,255,255,.08);border:1px
+                      style: &ptz >-
+                        ha-card{background:rgba(13,23,42,.72);border:1px
                         solid
-                        rgba(255,255,255,.12);border-radius:16px;--paper-item-icon-color:#80d8ff}
+                        rgba(148,163,184,.16);border-radius:16px;--paper-item-icon-color:#80d8ff}
                   - type: button
                     icon: mdi:arrow-up-bold
                     show_name: false
@@ -526,10 +874,7 @@ views:
                       action: perform-action
                       perform_action: rest_command.cam_salon_haut
                     card_mod:
-                      style: >-
-                        ha-card{background:rgba(255,255,255,.08);border:1px
-                        solid
-                        rgba(255,255,255,.12);border-radius:16px;--paper-item-icon-color:#80d8ff}
+                      style: *ptz
                   - type: button
                     icon: mdi:stop
                     show_name: false
@@ -547,10 +892,7 @@ views:
                       action: perform-action
                       perform_action: rest_command.cam_salon_bas
                     card_mod:
-                      style: >-
-                        ha-card{background:rgba(255,255,255,.08);border:1px
-                        solid
-                        rgba(255,255,255,.12);border-radius:16px;--paper-item-icon-color:#80d8ff}
+                      style: *ptz
                   - type: button
                     icon: mdi:arrow-right-bold
                     show_name: false
@@ -558,10 +900,7 @@ views:
                       action: perform-action
                       perform_action: rest_command.cam_salon_droite
                     card_mod:
-                      style: >-
-                        ha-card{background:rgba(255,255,255,.08);border:1px
-                        solid
-                        rgba(255,255,255,.12);border-radius:16px;--paper-item-icon-color:#80d8ff}
+                      style: *ptz
               - type: grid
                 columns: 3
                 square: false
@@ -575,10 +914,9 @@ views:
                       data:
                         number: 0
                     card_mod:
-                      style: >-
-                        ha-card{background:rgba(255,255,255,.08);border:1px
-                        solid rgba(255,255,255,.12);border-radius:16px 16px 16px
-                        22px}
+                      style: &preset >-
+                        ha-card{background:rgba(13,23,42,.72);border:1px
+                        solid rgba(148,163,184,.16);border-radius:16px}
                   - type: button
                     icon: mdi:numeric-2-box
                     name: Preset 2
@@ -588,9 +926,7 @@ views:
                       data:
                         number: 1
                     card_mod:
-                      style: >-
-                        ha-card{background:rgba(255,255,255,.08);border:1px
-                        solid rgba(255,255,255,.12);border-radius:16px}
+                      style: *preset
                   - type: button
                     icon: mdi:numeric-3-box
                     name: Preset 3
@@ -600,10 +936,8 @@ views:
                       data:
                         number: 2
                     card_mod:
-                      style: >-
-                        ha-card{background:rgba(255,255,255,.08);border:1px
-                        solid rgba(255,255,255,.12);border-radius:16px 16px 22px
-                        16px}
+                      style: *preset
+
       - type: grid
         cards:
           - type: heading
@@ -624,8 +958,8 @@ views:
                     mode: open
                 card_mod:
                   style: >-
-                    ha-card{background:rgba(255,255,255,.08);border:1px solid
-                    rgba(255,255,255,.12);border-radius:16px;--paper-item-icon-color:#ffd54f}
+                    ha-card{background:rgba(13,23,42,.72);border:1px solid
+                    rgba(148,163,184,.16);border-radius:16px;--paper-item-icon-color:#ffd54f}
               - type: button
                 icon: mdi:led-off
                 name: IR off
@@ -636,8 +970,8 @@ views:
                     mode: close
                 card_mod:
                   style: >-
-                    ha-card{background:rgba(255,255,255,.08);border:1px solid
-                    rgba(255,255,255,.12);border-radius:16px;--paper-item-icon-color:#b0bec5}
+                    ha-card{background:rgba(13,23,42,.72);border:1px solid
+                    rgba(148,163,184,.16);border-radius:16px;--paper-item-icon-color:#b0bec5}
               - type: button
                 icon: mdi:brightness-auto
                 name: IR auto
@@ -648,8 +982,8 @@ views:
                     mode: auto
                 card_mod:
                   style: >-
-                    ha-card{background:rgba(255,255,255,.08);border:1px solid
-                    rgba(255,255,255,.12);border-radius:16px;--paper-item-icon-color:#4fc3f7}
+                    ha-card{background:rgba(13,23,42,.72);border:1px solid
+                    rgba(148,163,184,.16);border-radius:16px;--paper-item-icon-color:#4fc3f7}
           - type: grid
             columns: 2
             square: false
@@ -674,74 +1008,16 @@ views:
                   style: >-
                     ha-card{background:rgba(239,83,80,.16);border:1px solid
                     rgba(239,83,80,.4);border-radius:16px;--paper-item-icon-color:#ef9a9a}
-  - title: Sécurité
-    path: securite
-    icon: mdi:shield-home
-    type: sections
-    max_columns: 2
-    background: linear-gradient(160deg,#0f2027,#203a43 50%,#2c5364) fixed
-    sections:
-      - type: grid
-        cards:
-          - type: heading
-            heading: Mode alarme
-            heading_style: title
-            icon: mdi:shield-home
-          - type: button
-            entity: input_boolean.mode_alarme
-            name: Alarme
-            icon: mdi:shield-home
-            show_state: true
-            tap_action:
-              action: toggle
-            card_mod:
-              style: >
-                @keyframes p{0%,100%{box-shadow:0 0 0 0
-                rgba(239,83,80,.65)}50%{box-shadow:0 0 26px 8px
-                rgba(239,83,80,.55)}}
 
-                ha-card{backdrop-filter:blur(14px);border-radius:22px;{% if
-                is_state('input_boolean.mode_alarme','on')
-                %}background:linear-gradient(135deg,rgba(198,40,40,.85),rgba(239,83,80,.75));border:1px
-                solid
-                rgba(255,255,255,.35);color:#fff;--paper-item-icon-color:#fff;animation:p
-                2s ease-in-out infinite{% else
-                %}background:rgba(255,255,255,.07);border:1px solid
-                rgba(255,255,255,.12);--paper-item-icon-color:#81c784{% endif
-                %}}
-          - type: tile
-            entity: input_boolean.mode_alarme_auto
-            name: Alarme automatique
-            features:
-              - type: toggle
-            card_mod:
-              style: >
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px;{% if
-                is_state('input_boolean.mode_alarme_auto','on')
-                %}--tile-color:#ef5350;border-left:5px solid #ef5350{% endif %}}
-      - type: grid
-        cards:
-          - type: heading
-            heading: Vue rapide
-            heading_style: title
-            icon: mdi:cctv
-          - type: picture-entity
-            entity: camera.living_room_camera_salon
-            camera_view: live
-            fit_mode: cover
-            show_state: false
-            show_name: false
-            card_mod:
-              style: >-
-                ha-card{border:1px solid
-                rgba(255,255,255,.12);border-radius:22px;overflow:hidden}
+  # =====================================================================
+  # MAISON : Pierrette, sono, TV, courses
+  # =====================================================================
   - title: Maison
     path: maison
     icon: mdi:cat
     type: sections
-    max_columns: 2
-    background: linear-gradient(160deg,#0f2027,#203a43 50%,#2c5364) fixed
+    max_columns: 3
+    background: *bg
     sections:
       - type: grid
         cards:
@@ -755,11 +1031,22 @@ views:
             tap_action:
               action: perform-action
               perform_action: rest_command.croquettes
+              confirmation:
+                text: Donner des croquettes à Pierrette ?
+            grid_options:
+              columns: 12
+              rows: 2
             card_mod:
-              style: >-
-                ha-card{background:linear-gradient(135deg,rgba(255,138,101,.35),rgba(255,204,128,.25));backdrop-filter:blur(14px);border:1px
-                solid
-                rgba(255,255,255,.2);border-radius:22px;--paper-item-icon-color:#ffab91}
+              style: *croq
+          - type: heading
+            heading: Liste de courses
+            heading_style: subtitle
+            icon: mdi:cart
+          - type: todo-list
+            entity: todo.shopping_list
+            card_mod:
+              style: *glass
+
       - type: grid
         cards:
           - type: heading
@@ -772,9 +1059,7 @@ views:
             features:
               - type: toggle
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
           - type: tile
             entity: input_number.volume_tel_sono
             name: Volume téléphone
@@ -785,44 +1070,266 @@ views:
               - type: numeric-input
                 style: slider
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid
-                #9575cd;border-radius:22px;--tile-color:#9575cd}
+              style: *glass_purple
+          - type: tile
+            entity: sensor.tel_musique_media_session
+            name: Lecture en cours
+            icon: mdi:music
+            card_mod:
+              style: *glass_purple
+          - type: tile
+            entity: binary_sensor.tel_musique_bluetooth_state
+            name: Bluetooth sono
+            icon: mdi:bluetooth
+            card_mod:
+              style: *glass
           - type: tile
             entity: sensor.tel_musique_battery_level
             name: Batterie téléphone sono
             features:
               - type: trend-graph
             card_mod:
-              style: >
-                {% set v = states('sensor.tel_musique_battery_level') |
-                float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
-                < 50 else '#66bb6a') %}
+              style: *batt_musique
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
-                }};border-radius:22px;--tile-color:{{ c }}}
-          - type: tile
-            entity: sensor.tablette_samsung_battery_level
-            name: Batterie tablette
-            features:
-              - type: trend-graph
+      - type: grid
+        cards:
+          - type: heading
+            heading: Télévision et prises
+            heading_style: title
+            icon: mdi:television
+          - type: media-control
+            entity: media_player.connect_tv_de_sfr
             card_mod:
-              style: >
-                {% set v = states('sensor.tablette_samsung_battery_level') |
-                float(100) %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v
-                < 50 else '#66bb6a') %}
+              style: *glass
+          - type: tile
+            entity: switch.relay_switch_1x2_5kw
+            name: Relais Z-Wave
+            icon: mdi:electric-switch
+            features:
+              - type: toggle
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: switch.tasmota
+            name: Prise Tasmota
+            icon: mdi:lamp
+            features:
+              - type: toggle
+            card_mod:
+              style: *glow_tasmota
 
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
-                }};border-radius:22px;--tile-color:{{ c }}}
+  # =====================================================================
+  # BUREAU : imprimante 3D Snapmaker U1
+  # =====================================================================
+  - title: Bureau
+    path: bureau
+    icon: mdi:printer-3d
+    type: sections
+    max_columns: 3
+    background: *bg
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Snapmaker U1
+            heading_style: title
+            icon: mdi:printer-3d
+            badges:
+              - type: entity
+                entity: sensor.bureau_snapmaker_u1_printer_state
+                show_state: true
+                show_icon: true
+          - type: picture-entity
+            entity: camera.bureau_snapmaker_u1_case
+            camera_view: live
+            fit_mode: cover
+            show_state: false
+            show_name: false
+            card_mod:
+              style: >-
+                ha-card{border:1px solid
+                rgba(148,163,184,.16);border-radius:22px;overflow:hidden}
+          - type: tile
+            entity: light.bureau_snapmaker_u1_led_cavity_led
+            name: Éclairage caisson
+            features:
+              - type: light-brightness
+            card_mod:
+              style: *glass
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Impression
+            heading_style: title
+            icon: mdi:printer-3d-nozzle
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_filename
+            name: Fichier
+            icon: mdi:file-cad
+            grid_options:
+              columns: 12
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_progress
+            name: Progression
+            icon: mdi:progress-clock
+            features:
+              - type: bar-gauge
+            grid_options:
+              columns: 12
+            card_mod:
+              style: *glass_cyan
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_print_time_left
+            name: Temps restant
+            icon: mdi:timer-sand
+            card_mod:
+              style: *glass_cyan
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_print_eta
+            name: Fin prévue
+            icon: mdi:clock-end
+            card_mod:
+              style: *glass_cyan
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_current_layer
+            name: Couche
+            icon: mdi:layers
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_total_layer
+            name: Couches totales
+            icon: mdi:layers-triple
+            card_mod:
+              style: *glass
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                name: Pause
+                icon: mdi:pause
+                tap_action:
+                  action: perform-action
+                  perform_action: button.press
+                  target:
+                    entity_id: button.bureau_snapmaker_u1_pause_print
+                card_mod:
+                  style: *preset
+              - type: button
+                name: Reprendre
+                icon: mdi:play
+                tap_action:
+                  action: perform-action
+                  perform_action: button.press
+                  target:
+                    entity_id: button.bureau_snapmaker_u1_resume_print
+                card_mod:
+                  style: *preset
+              - type: button
+                name: Annuler
+                icon: mdi:cancel
+                tap_action:
+                  action: perform-action
+                  perform_action: button.press
+                  target:
+                    entity_id: button.bureau_snapmaker_u1_cancel_print
+                  confirmation:
+                    text: Annuler l'impression en cours ?
+                card_mod:
+                  style: &btn_danger >-
+                    ha-card{background:rgba(239,83,80,.16);border:1px solid
+                    rgba(239,83,80,.4);border-radius:16px;--paper-item-icon-color:#ef9a9a}
+          - type: button
+            name: Arrêt d'urgence
+            icon: mdi:alert-octagon
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.bureau_snapmaker_u1_emergency_stop
+              confirmation:
+                text: Déclencher l'arrêt d'urgence de l'imprimante ?
+            grid_options:
+              columns: 12
+              rows: 1
+            card_mod:
+              style: *btn_danger
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Températures
+            heading_style: title
+            icon: mdi:thermometer
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_extruder_temperature
+            name: Buse 1
+            icon: mdi:printer-3d-nozzle-heat
+            card_mod:
+              style: &glass_orange >-
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid
+                #ff7043;border-radius:22px;--tile-color:#ff7043}
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_extruder1_temperature
+            name: Buse 2
+            icon: mdi:printer-3d-nozzle-heat
+            card_mod:
+              style: *glass_orange
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_extruder2_temperature
+            name: Buse 3
+            icon: mdi:printer-3d-nozzle-heat
+            card_mod:
+              style: *glass_orange
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_extruder3_temperature
+            name: Buse 4
+            icon: mdi:printer-3d-nozzle-heat
+            card_mod:
+              style: *glass_orange
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_bed_temperature
+            name: Plateau
+            icon: mdi:radiator
+            card_mod:
+              style: *glass_orange
+          - type: tile
+            entity: sensor.bureau_snapmaker_u1_cavity_temp
+            name: Caisson
+            icon: mdi:thermometer
+            card_mod:
+              style: *glass_orange
+          - type: history-graph
+            title: Températures (2 h)
+            hours_to_show: 2
+            show_names: true
+            grid_options:
+              columns: 12
+              rows: 3
+            entities:
+              - entity: sensor.bureau_snapmaker_u1_extruder_temperature
+                name: Buse 1
+              - entity: sensor.bureau_snapmaker_u1_bed_temperature
+                name: Plateau
+              - entity: sensor.bureau_snapmaker_u1_cavity_temp
+                name: Caisson
+            card_mod:
+              style: *glass
+
+  # =====================================================================
+  # TÉLÉPHONE
+  # =====================================================================
   - title: Téléphone
     path: telephone
     icon: mdi:cellphone
     type: sections
     max_columns: 2
-    background: linear-gradient(160deg,#0f2027,#203a43 50%,#2c5364) fixed
+    background: *bg
     sections:
       - type: grid
         cards:
@@ -833,56 +1340,61 @@ views:
           - type: tile
             entity: person.bruno
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
           - type: tile
-            entity: sensor.sm_a528b_bluetooth_connection
+            entity: sensor.samsung_sm_a528b_geocoded_location
+            name: Adresse
+            icon: mdi:map-marker-radius
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
           - type: tile
             entity: sensor.sm_a528b_battery_level
+            name: Batterie
             features:
               - type: bar-gauge
             card_mod:
-              style: >
-                @keyframes b{50%{opacity:.55}}
-
-                {% set v = states('sensor.sm_a528b_battery_level') | float(100)
-                %}{% set c = '#ef5350' if v < 20 else ('#ffa726' if v < 50 else
-                '#66bb6a') %}
-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid {{ c
-                }};border-radius:22px;--tile-color:{{ c }};{% if v < 20
-                %}animation:b 1.4s infinite{% endif %}}
+              style: *batt_samsung
+          - type: tile
+            entity: sensor.sm_a528b_charger_type
+            name: Chargeur
+            icon: mdi:power-plug-battery
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.sm_a528b_wi_fi_connection
+            name: Wi-Fi
+            icon: mdi:wifi
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.sm_a528b_bluetooth_connection
+            name: Bluetooth
+            card_mod:
+              style: *glass
           - type: tile
             entity: sensor.sm_a528b_daily_steps
+            name: Pas du jour
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid
+              style: &glass_teal >-
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid
                 #26a69a;border-radius:22px;--tile-color:#26a69a}
           - type: tile
             entity: sensor.sm_a528b_steps_sensor
+            name: Pas (total)
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-left:5px solid
-                #26a69a;border-radius:22px;--tile-color:#26a69a}
+              style: *glass_teal
           - type: history-graph
             hours_to_show: 24
             entities:
-              - sensor.sm_a528b_battery_level
+              - entity: sensor.sm_a528b_battery_level
+                name: Batterie
             grid_options:
               columns: 12
               rows: 3
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
+
       - type: grid
         cards:
           - type: heading
@@ -903,13 +1415,17 @@ views:
             card_mod:
               style: >-
                 ha-card{border:1px solid
-                rgba(255,255,255,.12);border-radius:22px;overflow:hidden}
+                rgba(148,163,184,.16);border-radius:22px;overflow:hidden}
+
+  # =====================================================================
+  # AGENDA
+  # =====================================================================
   - title: Agenda
     path: agenda
     icon: mdi:calendar
     type: sections
     max_columns: 1
-    background: linear-gradient(160deg,#0f2027,#203a43 50%,#2c5364) fixed
+    background: *bg
     sections:
       - type: grid
         cards:
@@ -925,6 +1441,228 @@ views:
             add_event_style: below
             add_event_size: small
             card_mod:
-              style: >-
-                ha-card{background:rgba(255,255,255,.07);backdrop-filter:blur(14px);border:1px
-                solid rgba(255,255,255,.12);border-radius:22px}
+              style: *glass
+
+  # =====================================================================
+  # SYSTÈME : réseau, tablette ESP, sauvegardes, mises à jour
+  # =====================================================================
+  - title: Système
+    path: systeme
+    icon: mdi:server
+    type: sections
+    max_columns: 3
+    background: *bg
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Surveillance des capteurs
+            heading_style: title
+            icon: mdi:access-point-network
+          - type: tile
+            entity: sensor.capteurs_muets
+            name: Capteurs muets
+            card_mod:
+              style: >
+                {% set n = states('sensor.capteurs_muets') | int(0) %}{% set c =
+                '#ef5350' if n > 0 else '#66bb6a' %}
+
+                @keyframes m{50%{box-shadow:0 0 22px rgba(239,83,80,.6)}}
+
+                ha-card{background:rgba(13,23,42,.72);backdrop-filter:blur(14px);border:1px
+                solid rgba(148,163,184,.16);border-left:5px solid {{ c
+                }};border-radius:22px;--tile-color:{{ c }};{% if n > 0
+                %}animation:m 2s ease-in-out infinite{% endif %}}
+          - type: tile
+            entity: input_number.delai_capteur_muet
+            name: Délai d'alerte
+            icon: mdi:timer-alert-outline
+            features_position: bottom
+            features:
+              - type: numeric-input
+                style: slider
+            card_mod:
+              style: *glass_purple
+          - type: markdown
+            grid_options:
+              columns: 12
+            content: |
+              {% set n = states('sensor.capteurs_muets') | int(0) %}
+              {% if n == 0 %}
+              ✅ **Tous les capteurs répondent**
+              {% else %}
+              ⚠️ **{{ n }} capteur{{ 's' if n > 1 }} sans remontée**
+
+              {% for l in state_attr('sensor.capteurs_muets', 'liste').split('\n') %}
+              - {{ l }}
+              {% endfor %}
+              {% endif %}
+            card_mod:
+              style: *glass
+          - type: button
+            name: Automatisation
+            icon: mdi:robot
+            show_state: false
+            tap_action:
+              action: more-info
+            entity: automation.capteur_sans_remontee
+            grid_options:
+              columns: 12
+              rows: 1
+            card_mod:
+              style: *preset
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Réseau
+            heading_style: title
+            icon: mdi:router-wireless
+          - type: tile
+            entity: binary_sensor.archer_be3600_wan_status
+            name: Internet
+            icon: mdi:web
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: binary_sensor.raspberry_pi_power_status
+            name: Alimentation Raspberry
+            icon: mdi:raspberry-pi
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.archer_be3600_download_speed
+            name: Descendant
+            icon: mdi:download
+            card_mod:
+              style: *glass_cyan
+          - type: tile
+            entity: sensor.archer_be3600_upload_speed
+            name: Montant
+            icon: mdi:upload
+            card_mod:
+              style: *glass_purple
+          - type: history-graph
+            title: Débit (24 h)
+            hours_to_show: 24
+            grid_options:
+              columns: 12
+              rows: 3
+            entities:
+              - entity: sensor.archer_be3600_download_speed
+                name: Descendant
+              - entity: sensor.archer_be3600_upload_speed
+                name: Montant
+            card_mod:
+              style: *glass
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Tablette ESP
+            heading_style: title
+            icon: mdi:tablet-dashboard
+          - type: tile
+            entity: light.tablette_esp_ecran_retroeclairage
+            name: Écran
+            features:
+              - type: light-brightness
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.living_room_tablette_esp_page_ecran
+            name: Page affichée
+            icon: mdi:page-layout-body
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: select.living_room_tablette_esp_aller_a_la_page
+            name: Aller à la page
+            features:
+              - type: select-options
+            grid_options:
+              columns: 12
+            card_mod:
+              style: *glass
+          - type: heading
+            heading: Z-Wave
+            heading_style: subtitle
+            icon: mdi:z-wave
+          - type: tile
+            entity: sensor.living_room_temperature_salon_node_status
+            name: Capteur salon
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.bedroom_sensor_chambre_node_status
+            name: Capteur chambre
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.node_5_node_status
+            name: Relais
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.800_series_long_range_usb_controller_status
+            name: Contrôleur
+            card_mod:
+              style: *glass
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Sauvegardes
+            heading_style: title
+            icon: mdi:backup-restore
+          - type: tile
+            entity: sensor.backup_last_successful_automatic_backup
+            name: Dernière réussie
+            card_mod:
+              style: *glass
+          - type: tile
+            entity: sensor.backup_next_scheduled_automatic_backup
+            name: Prochaine
+            card_mod:
+              style: *glass
+          - type: heading
+            heading: Mises à jour disponibles
+            heading_style: subtitle
+            icon: mdi:update
+          - type: entity-filter
+            state_filter:
+              - "on"
+            show_empty: true
+            card:
+              type: entities
+              card_mod:
+                style: *glass
+            entities:
+              - update.home_assistant_core_update
+              - update.home_assistant_operating_system_update
+              - update.home_assistant_supervisor_update
+              - update.hacs_update
+              - update.mushroom_update
+              - update.card_mod_update
+              - update.weather_forecast_card_update
+              - update.alarmo_update
+              - update.esphome_device_builder_update
+              - update.z_wave_js_update
+              - update.mosquitto_broker_update
+              - update.file_editor_update
+              - update.terminal_ssh_update
+              - update.tailscale_update
+              - update.whisper_update
+              - update.moonraker_update
+              - update.mqtt_explorer_update
+              - update.import_statistics_update
+              - update.raspberry_pi_4_firmware
+              - update.tp_link_router_update
+              - update.800_series_long_range_usb_controller_firmware
+              - update.relay_switch_1x2_5kw_firmware
+              - update.living_room_temperature_salon_firmware
+              - update.living_room_cadre_wled_firmware
+              - update.living_room_cube_wled_firmware
+              - update.wled_firmware
+              - update.wled_firmware_2
+              - update.wled_firmware_3
