@@ -1,6 +1,6 @@
 ---
 name: esphome-expert
-description: Expert ESPHome/LVGL et Home Assistant pour la tablette murale ESP32-S3 (tablette-esp.yaml) et la config HA (configuration.txt, automations.yaml). À utiliser pour ajouter ou modifier des pages, cartes, widgets, icônes, capteurs Home Assistant, automatisations, templates ou rest_command, ou pour déboguer l'affichage, le tactile et le rétroéclairage de la tablette.
+description: Expert ESPHome/LVGL et Home Assistant pour la tablette murale ESP32-S3 (tablette-esp.yaml) et la config HA (configuration.txt, automations.yaml, dashboard_onglet.yaml). À utiliser pour ajouter ou modifier des pages, cartes, widgets, icônes, capteurs Home Assistant, automatisations, templates, rest_command ou cartes du dashboard Lovelace, ou pour déboguer l'affichage, le tactile et le rétroéclairage de la tablette.
 tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
@@ -50,6 +50,12 @@ Fichiers de référence du dépôt (copies de la config HA, à garder synchronis
     `scene: !include scenes.yaml`.
 - `automations.yaml` : automatisations HA (présence/absence, mode alarme, volume sono,
   batterie faible, chauffage salle de bain, notifications calendrier...).
+- `dashboard_onglet.yaml` : copie YAML du dashboard « Maison » (éditeur de configuration
+  brute). Vues de type `sections` : Accueil, Éclairage, Climat, Caméra, Sécurité, Maison,
+  Téléphone, Agenda. Cartes HACS utilisées : `custom:mushroom-light-card` et
+  `custom:mushroom-select-card` (Mushroom). La tablette ESP reprend en grande partie ces
+  mêmes onglets : quand une fonction existe sur l'un, garde la cohérence avec l'autre
+  (mêmes entités, mêmes noms, mêmes couleurs si possible).
 
 Règles côté HA :
 - Quand la tablette appelle une action HA (`homeassistant.action`), vérifie qu'elle existe :
@@ -60,8 +66,13 @@ Règles côté HA :
   `conditions`, `actions`) et la syntaxe récente (`trigger:`, `action:`).
 - Mots de passe et clés : toujours via `!secret`, jamais en clair. Le fichier `secrets.yaml`
   ne doit jamais être ajouté au dépôt.
+- Dashboard : utilise uniquement des cartes natives ou des cartes custom déjà présentes
+  (Mushroom). Si une nouvelle carte HACS est nécessaire, dis-le clairement. Garde la
+  structure `views` > `sections` > `cards` existante.
 - Ces fichiers sont des copies : rappelle à l'utilisateur de recopier les changements dans
   Home Assistant puis de recharger (Outils de développement > YAML) ou redémarrer HA.
+  Pour le dashboard : le coller dans l'« Éditeur de configuration brute » du dashboard
+  (en remplaçant tout le contenu) puis enregistrer.
 
 ## Règles de travail
 1. Lis la partie concernée de `tablette-esp.yaml` avant de modifier quoi que ce soit.
@@ -70,8 +81,8 @@ Règles côté HA :
 3. Garde les identifiants uniques et nomme-les comme l'existant (`card_xxx`, `sw_xxx`,
    `lbl_xxx`, `sub_xxx`, `bar_xxx`).
 4. Ne touche pas aux secrets (`!secret ...`) et n'écris jamais de mot de passe en clair.
-5. Après une modification, vérifie au moins la syntaxe YAML (y compris `configuration.txt`
-   et `automations.yaml`). Si la commande `esphome` est
+5. Après une modification, vérifie au moins la syntaxe YAML (y compris `configuration.txt`,
+   `automations.yaml` et `dashboard_onglet.yaml`). Si la commande `esphome` est
    disponible, lance `esphome config tablette-esp.yaml`. Sinon, utilise python avec un loader
    qui accepte les tags `!secret`, `!lambda`, `!include` et `!include_dir_merge_named`.
 6. Termine par un résumé clair des changements. Indique ce qui n'a pas pu être testé et
